@@ -1,0 +1,143 @@
+import { createContext, useContext, useState, useEffect } from 'react';
+
+const CartContext = createContext();
+
+const AVAILABLE_COUPONS = {
+  BURGER40:  { code: 'BURGER40',  type: 'percent', value: 40,  minTotal: 399 },
+  SWEETBOGO: { code: 'SWEETBOGO', type: 'flat',    value: 120, minTotal: 299 },
+  FREEDEL3:  { code: 'FREEDEL3',  type: 'flat',    value: 30,  minTotal: 199 },
+  FLASH25:   { code: 'FLASH25',   type: 'percent', value: 25,  minTotal: 299 },
+  MUNCH50:   { code: 'MUNCH50',   type: 'flat',    value: 50,  minTotal: 399 },
+  WEEKEND20: { code: 'WEEKEND20', type: 'percent', value: 20,  minTotal: 249 },
+};
+
+export function CartProvider({ children }) {
+  const [cartItems, setCartItems] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+
+  useEffect(() => {
+    const savedCart = localStorage.getItem('cart');
+    const savedCoupon = localStorage.getItem('cart_coupon');
+    if (savedCart) {
+      setCartItems(JSON.parse(savedCart));
+    }
+    if (savedCoupon) {
+      setAppliedCoupon(JSON.parse(savedCoupon));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  useEffect(() => {
+    if (appliedCoupon) {
+      localStorage.setItem('cart_coupon', JSON.stringify(appliedCoupon));
+    } else {
+      localStorage.removeItem('cart_coupon');
+    }
+  }, [appliedCoupon]);
+
+  const addToCart = (item) => {
+    setCartItems((prev) => {
+      const existingItem = prev.find((cartItem) => cartItem.id === item.id);
+      if (existingItem) {
+        return prev.map((cartItem) =>
+          cartItem.id === item.id
+            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            : cartItem
+        );
+      }
+      return [...prev, { ...item, quantity: 1 }];
+    });
+  };
+
+  const removeFromCart = (itemId) => {
+    setCartItems((prev) => prev.filter((item) => item.id !== itemId));
+  };
+
+  const updateQuantity = (itemId, quantity) => {
+    if (quantity <= 0) {
+      removeFromCart(itemId);
+      return;
+    }
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId ? { ...item, quantity } : item
+      )
+    );
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
+    setAppliedCoupon(null);
+  };
+
+  const cartTotal = cartItems.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
+
+  const couponDiscount = appliedCoupon
+    ? appliedCoupon.type === 'percent'
+      ? Number((cartTotal * appliedCoupon.value / 100).toFixed(2))
+      : Math.min(appliedCoupon.value, cartTotal)
+    : 0;
+
+  const discountedTotal = Math.max(cartTotal - couponDiscount, 0);
+
+  const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
+
+  const applyCoupon = (couponCode) => {
+    const normalized = couponCode.trim().toUpperCase();
+    const coupon = AVAILABLE_COUPONS[normalized];
+
+    if (!coupon) {
+      return { success: false, message: 'Invalid coupon code.' };
+    }
+
+    if (cartTotal < coupon.minTotal) {
+      return { success: false, message: `Minimum order Rs. ${coupon.minTotal} required.` };
+    }
+
+    setAppliedCoupon(coupon);
+    return { success: true, message: `${coupon.code} applied successfully.` };
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+  };
+
+  return (
+    <CartContext.Provider
+      value={{
+        cartItems,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        cartTotal,
+        discountedTotal,
+        couponDiscount,
+        cartCount,
+        isCartOpen,
+        setIsCartOpen,
+        appliedCoupon,
+        applyCoupon,
+        removeCoupon,
+        availableCoupons: Object.values(AVAILABLE_COUPONS),
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+export function useCart() {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error('useCart must be used within CartProvider');
+  }
+  return context;
+}

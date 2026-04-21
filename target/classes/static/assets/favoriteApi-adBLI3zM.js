@@ -1,0 +1,1 @@
+import{t as e}from"./apiClient-CWu0BLMX.js";function t(t){return e.get(`/users/${t}/favorites`).then(e=>e.data)}function n(t,n){return e.post(`/users/${t}/favorites`,{restaurantId:n})}function r(t,n){return e.delete(`/users/${t}/favorites/${n}`)}export{n as addFavorite,t as getUserFavorites,r as removeFavorite};

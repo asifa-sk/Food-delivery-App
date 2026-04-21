@@ -1,0 +1,984 @@
+{
+  "info": {
+    "name": "Food App - Auth API",
+    "_postman_id": "foodapp-auth-collection-v1",
+    "description": "Authentication + Protected API tests — Food App backend (port 8081).\n\n── OTP HANDLING ─────────────────────────────────────────────\nDev mode (app.expose-otp-in-response=true):\n  Backend returns OTP inside json.otp → auto-captured.\n  Collection Runner completes unattended.\n\nProduction mode (property absent/false):\n  OTP is email-only. Runner halts at OTP steps via\n  pm.execution.setNextRequest(null). Set 'otp' manually.\n\n── SECURITY / AUTH TOKEN ────────────────────────────────────\nRequests 12-14 are PROTECTED and require authToken.\nThe token is auto-saved by steps 3, 4, 8, and 11.\nEach protected request validates token presence in its\npre-request script before firing.\n\n── TEST RELIABILITY ─────────────────────────────────────────\n• Status checks accept any 2xx (not just 200).\n• JSON parsing is guarded with try/catch.\n• Every script runs a 4xx/5xx error reporter block.\n• Negative tests assert absence of sensitive fields.\n\n── VARIABLES ────────────────────────────────────────────────\n  baseUrl   — backend root URL\n  testEmail — auto-generated per run\n  testPass  — initial password (reset after step 10)\n  otp       — auto-populated (dev) or set manually (prod)\n  authToken — auto-saved after login / OTP-verify steps\n  userId    — auto-saved after OTP verification\n\n── RUNNING ──────────────────────────────────────────────────\nCollection Runner: execute in order 1 → 14.\nProd mode halts at OTP steps — set 'otp', then resume.\n────────────────────────────────────────────────────────────",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  
+  "variable": [
+    { "key": "baseUrl",   "value": "http://localhost:8081", "type": "string" },
+    { "key": "testEmail", "value": "",                      "type": "string" },
+    { "key": "testPass",  "value": "Password@123",          "type": "string" },
+    { "key": "testName",  "value": "Test User",             "type": "string" },
+    { "key": "otp",       "value": "",                      "type": "string" },
+    { "key": "authToken", "value": "",                      "type": "string" },
+    { "key": "userId",    "value": "",                      "type": "string" }
+  ],
+
+  "item": [
+    {
+      "name": "1. Register",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Generate a unique email per run to avoid duplicate conflicts",
+              "const ts    = Date.now();",
+              "const email = `testuser_${ts}@foodapp.com`;",
+              "pm.collectionVariables.set('testEmail', email);",
+              "",
+              "// Clear stale OTP and token from any previous run",
+              "pm.collectionVariables.set('otp', '');",
+              "pm.collectionVariables.set('authToken', '');",
+              "pm.collectionVariables.set('userId', '');",
+              "",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [1. Register]');",
+              "console.log('   email :', email);",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {       
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 400) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error(' JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('success flag is true', () => { pm.expect(json.success).to.be.true; });",
+              "pm.test('message is non-empty', () => {",
+              "    pm.expect(json.message).to.be.a('string').and.not.empty;",
+              "});",
+              "pm.test('email matches registered email', () => {",
+              "    pm.expect(json.email).to.eql(pm.collectionVariables.get('testEmail'));",
+              "});",
+              "pm.test('response does NOT expose password', () => {",
+              "    pm.expect(json).to.not.have.property('password');",
+              "});",
+              "",
+              "// ── OTP auto-capture ──────────────────────────────────────────",
+              "if (json.otp) {",
+              "    pm.collectionVariables.set('otp', json.otp);",
+              "    pm.test('OTP auto-captured from response [DEV MODE]', () => {",
+              "        pm.expect(json.otp).to.match(/^\\d{6}$/);",
+              "    });",
+              "    console.log(' OTP auto-captured:', json.otp);",
+              "    console.log('   Collection Runner will proceed automatically.');",
+              "} else {",
+              "    console.warn(' OTP not in response (production mode).');",
+              "    console.warn('  ACTION: Check your email, then set the');",
+              "    console.warn('      \"otp\" variable in Collection Variables.');",
+              "    console.warn('    TIP: Run \"2. Resend OTP\" if no email arrived.');",
+              "    console.warn('   ⏸  Collection Runner will halt at \"3. Verify OTP\".');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"{{testName}}\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPass}}\",\n  \"role\": \"CUSTOMER\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] }
+      }
+    },
+    {
+      "name": "2. Resend OTP  [utility – run if OTP email not received]",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const email = pm.collectionVariables.get('testEmail');",
+              "if (!email) {",
+              "    throw new Error('testEmail is not set. Run \"1. Register\" first.');",
+              "}",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [2. Resend OTP]  email:', email);",
+              "console.log('   Requesting a fresh OTP...');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 400) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error(' JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('success flag is true', () => { pm.expect(json.success).to.be.true; });",
+              "pm.test('message is non-empty', () => {",
+              "    pm.expect(json.message).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "// ── OTP auto-capture (dev mode) ───────────────────────────────",
+              "if (json.otp) {",
+              "    pm.collectionVariables.set('otp', json.otp);",
+              "    pm.test('New OTP auto-captured from response [DEV MODE]', () => {",
+              "        pm.expect(json.otp).to.match(/^\\d{6}$/);",
+              "    });",
+              "    console.log(' New OTP auto-captured:', json.otp);",
+              "} else {",
+              "    console.warn(' OTP not in response. Check your email and set \"otp\" variable.');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/auth/resend-otp", "host": ["{{baseUrl}}"], "path": ["api", "auth", "resend-otp"] }
+      }
+    },
+    {
+      "name": "3. Verify OTP (Registration)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const otp   = pm.collectionVariables.get('otp')   || '';",
+              "const email = pm.collectionVariables.get('testEmail') || '';",
+              "",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [3. Verify OTP (Registration)]');",
+              "console.log('   email:', email);",
+              "",
+              "if (!otp || otp.trim() === '') {",
+              "    console.error(' HALT: otp variable is empty.');",
+              "    console.error('   Set \"otp\" in Collection Variables → Variables tab,');",
+              "    console.error('   then rerun from this request.');",
+              "    // Stop the Collection Runner at this step",
+              "    pm.execution.setNextRequest(null);",
+              "} else {",
+              "    console.log('   otp  :', otp);",
+              "    console.log('    OTP is set — proceeding with verification.');",
+              "}",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 400) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error('JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('success flag is true', () => { pm.expect(json.success).to.be.true; });",
+              "",
+              "pm.test('isVerified is true', () => { pm.expect(json.isVerified).to.be.true; });",
+              "pm.test('token is a non-empty string', () => {",
+              "    pm.expect(json.token).to.be.a('string').and.not.empty;",
+              "});",
+              "pm.test('userId is present', () => { pm.expect(json.userId).to.exist; });",
+              "pm.test('role is CUSTOMER', () => { pm.expect(json.role).to.eql('CUSTOMER'); });",
+              "pm.test('response does NOT expose password', () => {",
+              "    pm.expect(json).to.not.have.property('password');",
+              "});",
+              "",
+              "// ── Auto-save credentials ─────────────────────────────────────",
+              "if (json.token) {",
+              "    pm.collectionVariables.set('authToken', json.token);",
+              "    console.log(' authToken saved.');",
+              "}",
+              "if (json.userId) {",
+              "    pm.collectionVariables.set('userId', String(json.userId));",
+              "    console.log('userId saved:', json.userId);",
+              "}",
+              "// Clear OTP after use to prevent stale reuse",
+              "pm.collectionVariables.set('otp', '');",
+              "console.log(' otp variable cleared after use.');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"otp\": \"{{otp}}\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/auth/verify-otp", "host": ["{{baseUrl}}"], "path": ["api", "auth", "verify-otp"] }
+      }
+    },
+    {
+      "name": "4. Login (Email & Password)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const email = pm.collectionVariables.get('testEmail') || '';",
+              "const pass  = pm.collectionVariables.get('testPass')  || '';",
+              "if (!email || !pass) {",
+              "    throw new Error('testEmail or testPass is not set. Run Register first.');",
+              "}",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [4. Login]  email:', email);",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 400) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error(' JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('success flag is true', () => { pm.expect(json.success).to.be.true; });",
+              "pm.test('token is a non-empty string', () => {",
+              "    pm.expect(json.token).to.be.a('string').and.not.empty;",
+              "});",
+              "pm.test('response does NOT expose password', () => {",
+              "    pm.expect(json).to.not.have.property('password');",
+              "});",
+              "",
+              "pm.test('email matches', () => {",
+              "    pm.expect(json.email).to.eql(pm.collectionVariables.get('testEmail'));",
+              "});",
+              "",
+              "pm.test('name is present', () => {",
+              "    pm.expect(json.name).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "pm.test('role is CUSTOMER', () => {",
+              "    pm.expect(json.role).to.eql('CUSTOMER');",
+              "});",
+              "",
+              "if (json.token) {",
+              "    pm.collectionVariables.set('authToken', json.token);",
+              "    console.log('authToken updated from login.');",
+              "}",
+              "if (json.userId) {",
+              "    pm.collectionVariables.set('userId', String(json.userId));",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPass}}\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+      }
+    },
+    {
+      "name": "5. Login - Wrong Password (Negative)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [5. Login - Wrong Password]  expecting failure.');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Response is 4xx (expected rejection)', () => {",
+              "    pm.expect(pm.response.code).to.be.within(400, 499);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error(' JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('success flag is false', () => {",
+              "    pm.expect(json.success).to.be.false;",
+              "});",
+              "",
+              "pm.test('error message is present', () => {",
+              "    pm.expect(json.message).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "pm.test('no token returned on failed login', () => {",
+              "    pm.expect(json.token).to.not.exist;",
+              "});",
+              "",
+              "console.log('Negative test passed — wrong password correctly rejected.');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"WrongPassword@999\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+      }
+    },
+    {
+      "name": "6. Login - Unregistered Email (Negative)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [6. Login - Unregistered Email]  expecting failure.');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Response is 4xx (expected rejection)', () => {",
+              "    pm.expect(pm.response.code).to.be.within(400, 499);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error(' JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('success flag is false', () => { pm.expect(json.success).to.be.false; });",
+              "pm.test('error message is present', () => {",
+              "    pm.expect(json.message).to.be.a('string').and.not.empty;",
+              "});",
+              "pm.test('no token returned', () => { pm.expect(json.token).to.not.exist; });",
+              "console.log(' Negative test passed — unknown email correctly rejected.');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"nobody_exists_xyz@foodapp.com\",\n  \"password\": \"Password@123\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+      }
+    },
+    {
+      "name": "7. Passwordless Login - Request OTP",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const email = pm.collectionVariables.get('testEmail') || '';",
+              "if (!email) {",
+              "    throw new Error('testEmail is not set. Run Register first.');",
+              "}",
+              "// Clear any previous OTP before requesting a new one",
+              "pm.collectionVariables.set('otp', '');",
+              "",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [7. Passwordless Login - Request OTP]');",
+              "console.log('   email:', email);",
+              "console.log('   Requesting login OTP...');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 400) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error(' JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('success flag is true', () => { pm.expect(json.success).to.be.true; });",
+              "pm.test('message confirms OTP sent', () => {",
+              "    pm.expect(json.message).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "// ── OTP auto-capture (dev mode) ───────────────────────────────",
+              "if (json.otp) {",
+              "    pm.collectionVariables.set('otp', json.otp);",
+              "    pm.test('Login OTP auto-captured [DEV MODE]', () => {",
+              "        pm.expect(json.otp).to.match(/^\\d{6}$/);",
+              "    });",
+              "    console.log(' Login OTP auto-captured:', json.otp);",
+              "} else {",
+              "    console.warn(' OTP not in response (production mode).');",
+              "    console.warn('  Set \"otp\" variable, then rerun \"8. Verify OTP\".');",
+              "    console.warn('   ⏸  Runner will halt at step 8 if otp is not set.');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/auth/login-otp/request", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login-otp", "request"] }
+      }
+    },
+    {
+      "name": "8. Passwordless Login - Verify OTP",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const otp   = pm.collectionVariables.get('otp')        || '';",
+              "const email = pm.collectionVariables.get('testEmail')   || '';",
+              "",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [8. Passwordless Login - Verify OTP]');",
+              "console.log('   email:', email);",
+              "",
+              "if (!otp || otp.trim() === '') {",
+              "    console.error(' HALT: otp variable is empty.');",
+              "    console.error('   Check your email for the login OTP,');",
+              "    console.error('   set \"otp\" in Collection Variables, then rerun.');",
+              "    pm.execution.setNextRequest(null);",
+              "} else {",
+              "    console.log('   otp  :', otp);",
+              "    console.log('   OTP is set — proceeding.');",
+              "}",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 400) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error(' JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('success flag is true', () => { pm.expect(json.success).to.be.true; });",
+              "pm.test('token returned', () => {",
+              "    pm.expect(json.token).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "if (json.token) {",
+              "    pm.collectionVariables.set('authToken', json.token);",
+              "    console.log(' authToken updated from OTP login.');",
+              "}",
+              "pm.collectionVariables.set('otp', '');",
+              "console.log('otp variable cleared after use.');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"otp\": \"{{otp}}\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/auth/login-otp/verify", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login-otp", "verify"] }
+      }
+    },
+    {
+      "name": "9. Forgot Password - Request OTP",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const email = pm.collectionVariables.get('testEmail') || '';",
+              "if (!email) {",
+              "    throw new Error('testEmail is not set. Run Register first.');",
+              "}",
+              "// Clear previous OTP before requesting a new one",
+              "pm.collectionVariables.set('otp', '');",
+              "",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [9. Forgot Password - Request OTP]');",
+              "console.log('   email:', email);",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 400) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error(' JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('success flag is true', () => { pm.expect(json.success).to.be.true; });",
+              "",
+              "pm.test('message is present', () => {",
+              "    pm.expect(json.message).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "// ── OTP auto-capture (dev mode) ───────────────────────────────",
+              "if (json.otp) {",
+              "    pm.collectionVariables.set('otp', json.otp);",
+              "    pm.test('Password-reset OTP auto-captured [DEV MODE]', () => {",
+              "        pm.expect(json.otp).to.match(/^\\d{6}$/);",
+              "    });",
+              "    console.log('Password-reset OTP auto-captured:', json.otp);",
+              "} else {",
+              "    console.warn('OTP not in response (production mode).');",
+              "    console.warn('  Set \"otp\" variable, then rerun \"10. Forgot Password - Reset\".');",
+              "    console.warn('   ⏸  Runner will halt at step 10 if otp is not set.');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/auth/forgot-password/request", "host": ["{{baseUrl}}"], "path": ["api", "auth", "forgot-password", "request"] }
+      }
+    },
+    {
+      "name": "10. Forgot Password - Reset",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const otp   = pm.collectionVariables.get('otp')        || '';",
+              "const email = pm.collectionVariables.get('testEmail')   || '';",
+              "",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [10. Forgot Password - Reset]');",
+              "console.log('   email:', email);",
+              "",
+              "if (!otp || otp.trim() === '') {",
+              "    console.error(' HALT: otp variable is empty.');",
+              "    console.error('   Check your email for the password-reset OTP,');",
+              "    console.error('   set \"otp\" in Collection Variables, then rerun.');",
+              "    pm.execution.setNextRequest(null);",
+              "} else {",
+              "    console.log('   otp  :', otp);",
+              "    console.log('     OTP is set — resetting password to NewPassword@456.');",
+              "}",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "",
+              "// Update testPass so step 11 (login after reset) uses the new password",
+              "pm.collectionVariables.set('testPass', 'NewPassword@456');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 400) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error(' JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('success flag is true', () => { pm.expect(json.success).to.be.true; });",
+              "",
+              "pm.test('message confirms password reset', () => {",
+              "    pm.expect(json.message).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "pm.collectionVariables.set('otp', '');",
+              "console.log('otp variable cleared after use.');",
+              "console.log('Password reset — testPass updated to NewPassword@456.');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"otp\": \"{{otp}}\",\n  \"newPassword\": \"NewPassword@456\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/auth/forgot-password/reset", "host": ["{{baseUrl}}"], "path": ["api", "auth", "forgot-password", "reset"] }
+      }
+    },
+    {
+      "name": "11. Login After Password Reset",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const email = pm.collectionVariables.get('testEmail') || '';",
+              "const pass  = pm.collectionVariables.get('testPass')  || '';",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [11. Login After Password Reset]');",
+              "console.log('   email   :', email, ' | pass:', pass);",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 400) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error(' JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('Login succeeds with new password', () => { pm.expect(json.success).to.be.true; });",
+              "pm.test('token is returned', () => {",
+              "    pm.expect(json.token).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "if (json.token) {",
+              "    pm.collectionVariables.set('authToken', json.token);",
+              "    console.log(' authToken updated after password reset login.');",
+              "}",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('🏁Auth flow complete. authToken ready for protected requests.');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPass}}\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+      }
+    },
+    {
+      "name": "12. [Protected] Get My Orders",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const token  = pm.collectionVariables.get('authToken') || '';",
+              "const userId = pm.collectionVariables.get('userId')    || '';",
+              "if (!token)  throw new Error('authToken missing. Run steps 1-4 (Register → Login) first.');",
+              "if (!userId) throw new Error(' userId missing. Run step 3 (Verify OTP) first.');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [12. Protected] Get My Orders  userId:', userId);",
+              "console.log('   Authorization: Bearer', token.substring(0, 20) + '...');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 401 || pm.response.code === 403) {",
+              "    console.error(` Auth failure HTTP ${pm.response.code} — token may be expired. Re-run Login.`);",
+              "}",
+              "if (pm.response.code >= 500) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` Server error HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error(' JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('Response is an array', () => { pm.expect(json).to.be.an('array'); });",
+              "pm.test('Orders belong to current user (no data leakage)', () => {",
+              "    const userId = pm.collectionVariables.get('userId');",
+              "    const alien  = json.filter(o => String(o.customerId) !== userId);",
+              "    pm.expect(alien).to.have.length(0, 'Response contains orders from a different customer');",
+              "});",
+              "console.log(`Got ${json.length} order(s) for userId:`, pm.collectionVariables.get('userId'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Content-Type",  "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "description": "JWT token — auto-populated after login" }
+        ],
+        "url": {
+          "raw":  "{{baseUrl}}/api/orders/customer/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "customer", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "13. [Protected] Get Order Summary",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const token  = pm.collectionVariables.get('authToken') || '';",
+              "const userId = pm.collectionVariables.get('userId')    || '';",
+              "if (!token)  throw new Error(' authToken missing. Run Login first.');",
+              "if (!userId) throw new Error('userId missing. Run Verify OTP first.');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [13. Protected] Get Order Summary  userId:', userId);",
+              "console.log('   Authorization: Bearer', token.substring(0, 20) + '...');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 401 || pm.response.code === 403) {",
+              "    console.error(` Auth failure HTTP ${pm.response.code} — re-run Login to refresh token.`);",
+              "}",
+              "if (pm.response.code >= 500) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` Server error HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error('JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('totalOrders is non-negative',   () => { pm.expect(json.totalOrders).to.be.a('number').and.at.least(0); });",
+              "pm.test('activeOrders is non-negative',  () => { pm.expect(json.activeOrders).to.be.a('number').and.at.least(0); });",
+              "pm.test('totalAmount is non-negative',   () => { pm.expect(json.totalAmount).to.be.a('number').and.at.least(0); });",
+              "console.log(' Order summary:', JSON.stringify(json));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Content-Type",  "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "description": "JWT token — auto-populated after login" }
+        ],
+        "url": {
+          "raw":  "{{baseUrl}}/api/orders/customer/{{userId}}/summary",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "customer", "{{userId}}", "summary"]
+        }
+      }
+    },
+    {
+      "name": "14. [Protected] Get Restaurants",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const token = pm.collectionVariables.get('authToken') || '';",
+              "if (!token) throw new Error(' authToken missing. Run Login first.');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log('▶ [14. Protected] Get Restaurants');",
+              "console.log('   Authorization: Bearer', token.substring(0, 20) + '...');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 401 || pm.response.code === 403) {",
+              "    console.error(` Auth failure HTTP ${pm.response.code} — re-run Login to refresh token.`);",
+              "}",
+              "if (pm.response.code >= 500) {",
+              "    let msg = pm.response.text();",
+              "    try { msg = pm.response.json().message || msg; } catch(e) {}",
+              "    console.error(` Server error HTTP ${pm.response.code}: ${msg}`);",
+              "}",
+              "",
+              "pm.test('Response status is 2xx', () => {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Response is JSON', () => { pm.response.to.be.json; });",
+              "let json;",
+              "try { json = pm.response.json(); }",
+              "catch(e) { console.error('JSON parse failed:', pm.response.text()); return; }",
+              "",
+              "pm.test('Response is an array', () => { pm.expect(json).to.be.an('array'); });",
+              "if (json.length > 0) {",
+              "    pm.test('Each restaurant has id and name', () => {",
+              "        json.forEach(r => {",
+              "            pm.expect(r).to.have.property('id');",
+              "            pm.expect(r.name).to.be.a('string').and.not.empty;",
+              "        });",
+              "    });",
+              "}",
+              "console.log(` Got ${json.length} restaurant(s).`);",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');",
+              "console.log(' Full collection run complete.');",
+              "console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Content-Type",  "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "description": "JWT token — auto-populated after login" }
+        ],
+        "url": {
+          "raw":  "{{baseUrl}}/api/restaurants/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "restaurants", ""]
+        }
+      }
+    }
+  ]
+}
