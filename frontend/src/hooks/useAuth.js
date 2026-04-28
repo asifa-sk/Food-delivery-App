@@ -4,7 +4,14 @@ import { loginUser, registerUser, verifyOtp } from '../api/authApi';
 export function useAuth() {
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem('user');
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored);
+    } catch (error) {
+      console.error('invalid stored user payload', error);
+      localStorage.removeItem('user');
+      return null;
+    }
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

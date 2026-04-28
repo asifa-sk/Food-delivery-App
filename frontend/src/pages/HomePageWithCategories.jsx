@@ -1,11 +1,12 @@
 ﻿import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Star, Clock, ChevronRight, TrendingUp, Zap, Award, PercentSquare } from "lucide-react";
+import { Search, Star, Clock, ChevronRight, Award } from "lucide-react";
 import NavbarWithCart from "../components/common/NavbarWithCart";
 import CartSidebar from "../components/common/CartSidebar";
 import FoodItemCard from '../components/FoodItemCard';
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from '../components/common/Toast';
+import { readFavoriteIds, writeFavoriteIds } from '../utils/favoritesStorage';
 
 const CUISINE_CATEGORIES = [
   { id: "all", label: "All", image: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&fit=crop" },
@@ -23,9 +24,9 @@ const RESTAURANTS = [];
 const API = 'http://localhost:8081/api';
 
 const OFFER_BANNERS = [
-  { id: 1, title: "Flat 40% OFF", subtitle: "on all burger restaurants above ₹399", code: "BURGER40", gradient: "from-orange-500 to-red-500", emoji: "🍔" },
-  { id: 2, title: "Buy 1 Get 1 FREE", subtitle: "on dessert combos above ₹299", code: "SWEETBOGO", gradient: "from-pink-500 to-purple-500", emoji: "🍰" },
-  { id: 3, title: "Free Delivery", subtitle: "on your first 3 orders above ₹199", code: "FREEDEL3", gradient: "from-green-500 to-teal-500", emoji: "🛵" },
+  { id: 1, title: "Flat 40% OFF", subtitle: "on all burger restaurants above ₹399", code: "BURGER40", gradient: "from-brand-500 to-accent-500", emoji: "🍔" },
+  { id: 2, title: "Buy 1 Get 1 FREE", subtitle: "on dessert combos above ₹299", code: "SWEETBOGO", gradient: "from-brand-400 to-brand-500", emoji: "🍰" },
+  { id: 3, title: "Free Delivery", subtitle: "on your first 3 orders above ₹199", code: "FREEDEL3", gradient: "from-brand-300 to-brand-500", emoji: "🛵" },
 ];
 
 const FILTER_OPTIONS = [
@@ -50,11 +51,8 @@ export default function HomePageWithCategories() {
   const [foodsLoading, setFoodsLoading] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("favoriteRestaurants");
-    if (saved) {
-      try { setFavoriteRestaurants(JSON.parse(saved)); } catch { /* ignore */ }
-    }
-  }, []);
+    setFavoriteRestaurants(readFavoriteIds(user?.id));
+  }, [user?.id]);
 
   // if user is logged in, sync favorites from server
   useEffect(() => {
@@ -65,7 +63,7 @@ export default function HomePageWithCategories() {
         const favs = await getUserFavorites(user.id);
         const ids = Array.isArray(favs) ? favs.map((r) => r.id) : [];
         setFavoriteRestaurants(ids);
-        localStorage.setItem('favoriteRestaurants', JSON.stringify(ids));
+        writeFavoriteIds(user.id, ids);
       } catch (e) {
         // ignore network errors and keep client-side list
         console.debug('favorites sync failed', e?.message || e);
@@ -124,7 +122,7 @@ export default function HomePageWithCategories() {
     const added = !prev.includes(restaurantId);
     const updated = added ? [...prev, restaurantId] : prev.filter((id) => id !== restaurantId);
     setFavoriteRestaurants(updated);
-    localStorage.setItem('favoriteRestaurants', JSON.stringify(updated));
+    writeFavoriteIds(user?.id, updated);
 
     if (user && user.id) {
       import('../api/favoriteApi').then(({ addFavorite, removeFavorite }) => {
@@ -187,37 +185,37 @@ export default function HomePageWithCategories() {
   const topRestaurants = useMemo(() => restaurants.filter((r) => r.isOpen).slice(0, 6), [restaurants]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-hero-warm">
       <NavbarWithCart user={user} onLogout={logout} />
       <CartSidebar />
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-orange-500 via-red-500 to-rose-600 text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
+      <section className="relative overflow-hidden bg-gradient-to-br from-brand-500 via-brand-500 to-brand-400 text-white">
+        <div className="absolute inset-0 opacity-15">
           <div className="absolute top-4 right-12 text-8xl">🍕</div>
           <div className="absolute bottom-4 right-48 text-6xl">🍔</div>
           <div className="absolute top-8 right-80 text-5xl">🥟</div>
         </div>
         <div className="max-w-7xl mx-auto px-4 py-12 md:py-16 relative">
           <div className="max-w-2xl">
-            <p className="text-orange-100 text-sm font-semibold tracking-widest uppercase mb-2">Foodyy • Delivery in 30 minutes</p>
+            <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-brand-100">Foodyy • Delivery in 30 minutes</p>
             <h1 className="text-4xl md:text-5xl font-black mb-2 leading-tight">
               Hungry? We have got<br />you covered! 🍽️
             </h1>
-            <p className="text-orange-100 text-lg mb-8">Order from {restaurants.length} restaurant{restaurants.length !== 1 ? "s" : ""}. Fresh food, fast delivery.</p>
+            <p className="mb-8 text-lg text-ink-200">Order from {restaurants.length} restaurant{restaurants.length !== 1 ? "s" : ""}. Fresh food, fast delivery.</p>
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-400" size={20} />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 type="text"
                 placeholder="Search for restaurants, cuisines or dishes..."
-                className="w-full pl-12 pr-4 py-4 rounded-2xl text-gray-800 bg-white shadow-xl focus:outline-none focus:ring-4 focus:ring-orange-200 text-base"
+                className="w-full rounded-2xl bg-white py-4 pl-12 pr-4 text-base text-ink-800 shadow-float focus:outline-none focus:ring-4 focus:ring-brand-200"
               />
             </div>
           </div>
         </div>
-        <div className="h-8 bg-gray-50" style={{clipPath: "ellipse(55% 100% at 50% 100%)"}} />
+        <div className="h-8 bg-surface-50" style={{clipPath: "ellipse(55% 100% at 50% 100%)"}} />
       </section>
 
       <div className="max-w-7xl mx-auto px-4">
@@ -226,8 +224,8 @@ export default function HomePageWithCategories() {
         {/* Offer Banners */}
         <section className="pb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-800">Best Deals</h2>
-            <button onClick={() => navigate("/offers")} className="text-orange-500 text-sm font-semibold flex items-center gap-1 hover:underline">
+            <h2 className="text-lg font-bold text-ink-800">Best Deals</h2>
+            <button onClick={() => navigate("/offers")} className="flex items-center gap-1 text-sm font-semibold text-brand-600 hover:underline">
               See all <ChevronRight size={16} />
             </button>
           </div>
@@ -235,7 +233,7 @@ export default function HomePageWithCategories() {
             {OFFER_BANNERS.map((offer) => (
               <div
                 key={offer.id}
-                className={"bg-gradient-to-r " + offer.gradient + " text-white rounded-2xl p-5 flex items-center gap-4 cursor-pointer hover:scale-105 transition-transform shadow-md"}
+                className={"rounded-2xl bg-gradient-to-r " + offer.gradient + " flex cursor-pointer items-center gap-4 p-5 text-white shadow-soft transition-transform hover:scale-[1.02]"}
                 onClick={() => navigate("/offers")}
               >
                 <span className="text-4xl">{offer.emoji}</span>
@@ -253,15 +251,15 @@ export default function HomePageWithCategories() {
         {activeCategory === "all" && !searchQuery && (
           <section className="pb-10">
             <div className="flex items-center gap-2 mb-4">
-              <Award size={20} className="text-orange-500" />
-              <h2 className="text-lg font-bold text-gray-800">Top Picks for You</h2>
+              <Award size={20} className="text-brand-500" />
+              <h2 className="text-lg font-bold text-ink-800">Top Picks for You</h2>
             </div>
             <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
               {topRestaurants.map((r) => (
                 <button
                   key={r.id}
                   onClick={() => navigate("/menu/" + r.id)}
-                  className="rounded-2xl overflow-hidden hover:scale-105 transition-transform shadow-sm border border-white/50 text-center bg-white"
+                  className="overflow-hidden rounded-2xl border border-brand-100 bg-white text-center shadow-soft transition-transform hover:scale-[1.03]"
                 >
                   <div className="h-20 w-full overflow-hidden">
                     {r.image ? (
@@ -272,7 +270,7 @@ export default function HomePageWithCategories() {
                   </div>
                   <div className="p-2 flex flex-col items-center gap-1.5">
                     <p className="font-bold text-gray-800 text-xs leading-tight line-clamp-2">{r.name}</p>
-                    <span className="inline-flex items-center gap-0.5 bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-success-600 px-2 py-0.5 text-xs font-bold text-white">
                       <Star size={9} fill="currentColor" /> {r.rating}
                     </span>
                   </div>
@@ -289,7 +287,7 @@ export default function HomePageWithCategories() {
               <button
                 key={f.id}
                 onClick={() => setActiveFilter(f.id)}
-                className={"flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold border transition-all " + (activeFilter === f.id ? "bg-gray-800 text-white border-gray-800" : "bg-white text-gray-700 border-gray-200 hover:border-gray-400")}
+                className={"flex-shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-all " + (activeFilter === f.id ? "border-ink-900 bg-ink-900 text-white" : "border-brand-100 bg-white text-ink-700 hover:border-brand-300 hover:text-brand-700")}
               >
                 {f.label}
               </button>
@@ -300,15 +298,15 @@ export default function HomePageWithCategories() {
         {/* Dish results (when searching) */}
         {searchQuery.trim() && (
           <section className="pb-8">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Dishes matching "{searchQuery}"</h2>
+            <h2 className="mb-4 text-lg font-bold text-ink-800">Dishes matching "{searchQuery}"</h2>
             {foodsLoading ? (
-              <div className="text-center py-10 text-gray-500">Searching menus...</div>
+              <div className="py-10 text-center text-ink-500">Searching menus...</div>
             ) : matchedDishes.length === 0 ? (
-              <div className="text-center py-6 text-gray-500 text-sm">No matching dishes found.</div>
+              <div className="py-6 text-center text-sm text-ink-500">No matching dishes found.</div>
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 {matchedDishes.map((dish) => (
-                  <div key={dish.id} className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div key={dish.id} className="rounded-2xl border border-brand-100 bg-white p-4 shadow-soft">
                     <FoodItemCard item={dish} />
                   </div>
                 ))}
@@ -319,16 +317,16 @@ export default function HomePageWithCategories() {
 
         {/* Restaurant Grid */}
         <section className="pb-16">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">
+          <h2 className="mb-4 text-lg font-bold text-ink-800">
             {activeCategory === "all" ? "All Restaurants" : CUISINE_CATEGORIES.find((c) => c.id === activeCategory)?.label + " Restaurants"}
-            <span className="ml-2 text-sm font-normal text-gray-500">({filteredRestaurants.length})</span>
+            <span className="ml-2 text-sm font-normal text-ink-500">({filteredRestaurants.length})</span>
           </h2>
           {filteredRestaurants.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-5xl mb-4">🔍</p>
-              <p className="text-xl font-bold text-gray-700">No restaurants found</p>
-              <p className="text-gray-500 mt-2">Try a different search or category</p>
-              <button onClick={() => { setSearchQuery(""); setActiveCategory("all"); setActiveFilter("all"); }} className="mt-4 px-6 py-2 bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 transition">
+              <p className="text-xl font-bold text-ink-700">No restaurants found</p>
+              <p className="mt-2 text-ink-500">Try a different search or category</p>
+              <button onClick={() => { setSearchQuery(""); setActiveCategory("all"); setActiveFilter("all"); }} className="mt-4 rounded-xl bg-brand-500 px-6 py-2 font-semibold text-white transition hover:bg-brand-600">
                 Clear Filters
               </button>
             </div>
@@ -349,7 +347,7 @@ export default function HomePageWithCategories() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-10 px-4">
+      <footer className="bg-brand-500 px-4 py-10 text-brand-100">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
@@ -363,7 +361,7 @@ export default function HomePageWithCategories() {
               <button onClick={() => navigate("/profile")} className="hover:text-white transition">Profile</button>
             </div>
           </div>
-          <p className="text-center text-xs mt-8 text-gray-600">© 2026 Foodyy. All rights reserved.</p>
+          <p className="mt-8 text-center text-xs text-brand-100/80">© 2026 Foodyy. All rights reserved.</p>
         </div>
       </footer>
     </div>
@@ -371,8 +369,8 @@ export default function HomePageWithCategories() {
 }
 
 const GRADIENT_COLORS = [
-  ['#f97316','#ef4444'], ['#8b5cf6','#ec4899'], ['#06b6d4','#3b82f6'],
-  ['#10b981','#059669'], ['#f59e0b','#f97316'], ['#6366f1','#8b5cf6'],
+  ['#FF5722', '#FF8A65'], ['#FF8A65', '#FFCCBC'], ['#FF5722', '#F4511E'],
+  ['#FFCCBC', '#FFF8F0'], ['#E64A19', '#FF5722'], ['#FF8A65', '#FFAB91'],
 ];
 
 function RestaurantPlaceholder({ name }) {
@@ -390,7 +388,7 @@ function RestaurantCard({ restaurant, isFavorite, onToggleFavorite, onClick }) {
   const [imgError, setImgError] = useState(false);
   return (
     <div
-      className={"bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer group border border-gray-100 " + (!restaurant.isOpen ? "opacity-60" : "")}
+      className={"group cursor-pointer overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-float " + (!restaurant.isOpen ? "opacity-60" : "")}
       onClick={onClick}
     >
       <div className="relative h-44 overflow-hidden">
@@ -406,44 +404,44 @@ function RestaurantCard({ restaurant, isFavorite, onToggleFavorite, onClick }) {
           <RestaurantPlaceholder name={restaurant.name} />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-        <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-white text-green-700 text-xs font-bold px-2 py-1 rounded-lg shadow">
-          <Star size={11} fill="currentColor" className="text-green-600" /> {restaurant.rating}
+        <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-xs font-bold text-success-700 shadow">
+          <Star size={11} fill="currentColor" className="text-success-600" /> {restaurant.rating}
         </span>
         <button
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-          className={"absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow transition " + (isFavorite ? "bg-red-500 text-white" : "bg-white text-gray-400 hover:text-red-400")}
+          className={"absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full shadow transition " + (isFavorite ? "bg-accent-500 text-white" : "bg-white text-ink-400 hover:text-accent-500")}
         >
           <svg className="w-4 h-4" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </button>
         {!restaurant.isOpen && (
-          <div className="absolute inset-0 bg-gray-900/60 flex items-center justify-center">
-            <span className="bg-white text-gray-800 text-xs font-bold px-3 py-1 rounded-full">Currently Closed</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-ink-950/60">
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-ink-800">Currently Closed</span>
           </div>
         )}
         {restaurant.isNew && (
-          <span className="absolute bottom-3 left-3 bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">NEW</span>
+          <span className="absolute bottom-3 left-3 rounded-full bg-brand-500 px-2 py-0.5 text-xs font-bold text-white">NEW</span>
         )}
       </div>
       <div className="p-4">
         <div className="flex items-start justify-between">
-          <h3 className="font-bold text-gray-900 text-base group-hover:text-orange-600 transition">{restaurant.name}</h3>
+          <h3 className="text-base font-bold text-ink-900 transition group-hover:text-brand-600">{restaurant.name}</h3>
           {restaurant.isPureVeg && (
-            <span className="flex-shrink-0 w-5 h-5 border-2 border-green-600 rounded flex items-center justify-center ml-2">
-              <span className="w-2.5 h-2.5 bg-green-600 rounded-full" />
+            <span className="ml-2 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border-2 border-success-600">
+              <span className="h-2.5 w-2.5 rounded-full bg-success-600" />
             </span>
           )}
         </div>
-        <p className="text-gray-500 text-xs mt-1 truncate">{restaurant.cuisines.join(" • ")}</p>
-        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+        <p className="mt-1 truncate text-xs text-ink-500">{restaurant.cuisines.join(" • ")}</p>
+        <div className="mt-2 flex items-center gap-3 text-xs text-ink-500">
           <span className="flex items-center gap-1"><Clock size={11} /> {restaurant.eta} min</span>
           <span>•</span>
           <span>₹{restaurant.costForTwo} for two</span>
         </div>
         {restaurant.discount && (
-          <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
-            <p className="text-xs text-orange-600 font-semibold">🏷️ {restaurant.discount}</p>
+          <div className="mt-3 border-t border-dashed border-brand-100 pt-3">
+            <p className="text-xs font-semibold text-brand-600">🏷️ {restaurant.discount}</p>
           </div>
         )}
       </div>

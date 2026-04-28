@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RestaurantLayout from '../../components/restaurant/RestaurantLayout';
 import { useToast } from '../../components/common/Toast';
+import { readStoredJson } from '../../utils/storage';
 
 const API = 'http://localhost:8081/api';
 
 export default function Settings() {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = readStoredJson('user', {});
   const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: '', address: '', contactNumber: '' });
@@ -45,7 +46,7 @@ export default function Settings() {
 
   return (
     <RestaurantLayout title="Restaurant settings" subtitle={restaurant.name} rightBadge="Auto-saved to dashboard">
-      <section className="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm max-w-3xl mx-auto">
+      <section className="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">Details</h2>
           <div className="flex items-center gap-3">
@@ -59,17 +60,17 @@ export default function Settings() {
         <div className="grid gap-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Name</label>
-            <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-200" />
+            <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-200" />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Address</label>
-            <textarea value={form.address} onChange={e => setForm({...form, address: e.target.value})} rows={3} className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-200" />
+            <textarea value={form.address} onChange={e => setForm({...form, address: e.target.value})} rows={3} className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-200" />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Contact</label>
-            <input value={form.contactNumber} onChange={e => setForm({...form, contactNumber: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-200" />
+            <input value={form.contactNumber} onChange={e => setForm({...form, contactNumber: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-200" />
             <p className="text-xs text-gray-400 mt-2">Phone number visible to customers for delivery/contact.</p>
           </div>
         </div>

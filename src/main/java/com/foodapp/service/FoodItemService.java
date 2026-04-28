@@ -45,6 +45,16 @@ public class FoodItemService {
         return foodItemRepository.save(item);
     }
 
+    public FoodItem updateFoodItem(Long id, AddFoodItemRequest request) {
+        FoodItem item = getById(id);
+        item.setName(request.getName());
+        item.setDescription(request.getDescription());
+        item.setPrice(request.getPrice());
+        item.setCategory(request.getCategory());
+        item.setImageUrl(request.getImageUrl());
+        return foodItemRepository.save(item);
+    }
+
     public FoodItem getById(Long id) {
         return foodItemRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Food item not found with id: " + id));

@@ -56,7 +56,7 @@ export default function ProfilePage() {
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-50">
       <NavbarWithCart user={user} onLogout={logout} />
       <CartSidebar />
 
@@ -70,7 +70,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Avatar Card */}
-        <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-3xl p-6 mb-6 text-white shadow-lg">
+        <div className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-3xl p-6 mb-6 text-white shadow-lg">
           <div className="flex items-center gap-5">
             <div className="w-20 h-20 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center text-4xl font-black">
               {initials}
@@ -87,7 +87,7 @@ export default function ProfilePage() {
           {[
             { label: "Total Orders", value: orderStats.total, color: "text-blue-600", bg: "bg-blue-50", icon: <Package size={20} className="text-blue-500" /> },
             { label: "Delivered", value: orderStats.delivered, color: "text-green-600", bg: "bg-green-50", icon: <Package size={20} className="text-green-500" /> },
-            { label: "Total Spent", value: `₹${orderStats.totalSpent.toFixed(0)}`, color: "text-orange-600", bg: "bg-orange-50", icon: <Tag size={20} className="text-orange-500" /> },
+            { label: "Total Spent", value: `₹${orderStats.totalSpent.toFixed(0)}`, color: "text-brand-600", bg: "bg-brand-50", icon: <Tag size={20} className="text-brand-500" /> },
           ].map((stat) => (
             <div key={stat.label} className={"rounded-2xl p-4 text-center " + stat.bg}>
               <div className="flex justify-center mb-1">{stat.icon}</div>
@@ -102,7 +102,7 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <h3 className="font-bold text-gray-900">Personal Information</h3>
             {!editMode ? (
-              <button onClick={() => setEditMode(true)} className="flex items-center gap-1.5 text-sm text-orange-500 font-semibold hover:text-orange-600">
+              <button onClick={() => setEditMode(true)} className="flex items-center gap-1.5 text-sm text-brand-500 font-semibold hover:text-brand-600">
                 <Edit2 size={14} /> Edit
               </button>
             ) : (
@@ -119,7 +119,7 @@ export default function ProfilePage() {
 
           <div className="p-5 space-y-5">
             <ProfileField
-              icon={<User size={18} className="text-orange-400" />}
+              icon={<User size={18} className="text-brand-400" />}
               label="Full Name"
               value={form.name}
               editMode={editMode}
@@ -127,7 +127,7 @@ export default function ProfilePage() {
               placeholder="Enter your name"
             />
             <ProfileField
-              icon={<Mail size={18} className="text-orange-400" />}
+              icon={<Mail size={18} className="text-brand-400" />}
               label="Email Address"
               value={user?.email || "—"}
               editMode={false}
@@ -135,7 +135,7 @@ export default function ProfilePage() {
               placeholder=""
             />
             <ProfileField
-              icon={<Phone size={18} className="text-orange-400" />}
+              icon={<Phone size={18} className="text-brand-400" />}
               label="Phone Number"
               value={form.phone}
               editMode={editMode}
@@ -143,7 +143,7 @@ export default function ProfilePage() {
               placeholder="Enter your phone number"
             />
             <ProfileField
-              icon={<MapPin size={18} className="text-orange-400" />}
+              icon={<MapPin size={18} className="text-brand-400" />}
               label="Default Address"
               value={form.address}
               editMode={editMode}
@@ -164,7 +164,7 @@ export default function ProfilePage() {
           {[
             { label: "My Orders", icon: <Package size={18} />, path: "/orders", color: "text-blue-600 bg-blue-50" },
             { label: "Favorites", icon: <Heart size={18} />, path: "/favorites", color: "text-red-500 bg-red-50" },
-            { label: "Offers", icon: <Tag size={18} />, path: "/offers", color: "text-orange-500 bg-orange-50" },
+            { label: "Offers", icon: <Tag size={18} />, path: "/offers", color: "text-brand-500 bg-brand-50" },
           ].map((item) => (
             <button key={item.label} onClick={() => navigate(item.path)} className={"flex items-center gap-3 p-4 rounded-2xl font-semibold text-sm hover:scale-105 transition-transform " + item.color}>
               {item.icon} {item.label}
@@ -187,7 +187,7 @@ function ProfileField({ icon, label, value, editMode, onChange, placeholder }) {
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-300"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-300"
           />
         ) : (
           <p className="text-gray-800 font-medium">{value || <span className="text-gray-400">—</span>}</p>

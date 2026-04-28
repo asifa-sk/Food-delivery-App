@@ -12,9 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class OrderService {
@@ -62,6 +64,18 @@ public class OrderService {
         order.setRestaurant(restaurant);
         order.setDeliveryAddress(request.getDeliveryAddress());
         order.setStatus(OrderStatus.PENDING);
+        order.setPaymentMethod(normalizePaymentMethod(request.getPaymentMethod()));
+        order.setPaymentStatus(
+                request.getPaymentStatus() == null || request.getPaymentStatus().isBlank()
+                        ? "PENDING"
+                        : request.getPaymentStatus().trim().toUpperCase(Locale.ROOT)
+        );
+        order.setPaymentReference(request.getPaymentReference());
+        order.setCustomerLatitude(request.getCustomerLatitude());
+        order.setCustomerLongitude(request.getCustomerLongitude());
+        order.setRestaurantLatitude(restaurant.getLatitude());
+        order.setRestaurantLongitude(restaurant.getLongitude());
+        applyDeliveryMetrics(order, request, restaurant);
         order.setTotalPrice(BigDecimal.ZERO);
 
         Order savedOrder = orderRepository.save(order);   // INSERT -> order_id is now available
@@ -93,6 +107,22 @@ public class OrderService {
         savedOrder.setOrderItems(orderItems);
 
         return orderRepository.save(savedOrder);          // UPDATE total_price
+    }
+
+    private String normalizePaymentMethod(String paymentMethod) {
+        if (paymentMethod == null || paymentMethod.isBlank()) {
+            return "cash_on_delivery";
+        }
+
+        String normalized = paymentMethod.trim().toLowerCase(Locale.ROOT);
+        if ("upi".equals(normalized)) {
+            // Persist UPI under the broader online bucket to stay compatible with older schema/data expectations.
+            return "online";
+        }
+        if ("cash".equals(normalized) || "cod".equals(normalized)) {
+            return "cash_on_delivery";
+        }
+        return normalized;
     }
 
         @Transactional
@@ -129,9 +159,68 @@ public class OrderService {
                                                 ? "Home"
                                                 : request.getDeliveryAddress().trim());
                 order.setStatus(OrderStatus.PENDING);
+                order.setPaymentMethod("cash_on_delivery");
+                order.setPaymentStatus("PENDING");
                 order.setTotalPrice(request.getTotalPrice() == null ? BigDecimal.ZERO : request.getTotalPrice());
+                order.setRestaurantLatitude(restaurant.getLatitude());
+                order.setRestaurantLongitude(restaurant.getLongitude());
 
                 return orderRepository.save(order);
+        }
+
+        private void applyDeliveryMetrics(Order order, PlaceOrderRequest request, Restaurant restaurant) {
+                BigDecimal restaurantLatitude = restaurant.getLatitude();
+                BigDecimal restaurantLongitude = restaurant.getLongitude();
+                BigDecimal customerLatitude = request.getCustomerLatitude();
+                BigDecimal customerLongitude = request.getCustomerLongitude();
+
+                BigDecimal computedDistance = null;
+                if (restaurantLatitude != null && restaurantLongitude != null && customerLatitude != null && customerLongitude != null) {
+                        computedDistance = calculateDistanceKm(restaurantLatitude, restaurantLongitude, customerLatitude, customerLongitude);
+                } else if (request.getDeliveryDistanceKm() != null) {
+                        computedDistance = request.getDeliveryDistanceKm().setScale(2, RoundingMode.HALF_UP);
+                }
+
+                if (computedDistance != null) {
+                        order.setDeliveryDistanceKm(computedDistance);
+                        order.setDeliveryCharge(calculateDeliveryCharge(computedDistance));
+                        order.setEstimatedDeliveryMinutes(estimateDeliveryMinutes(computedDistance));
+                } else {
+                        order.setDeliveryDistanceKm(null);
+                        order.setDeliveryCharge(request.getDeliveryCharge());
+                        order.setEstimatedDeliveryMinutes(request.getEstimatedDeliveryMinutes());
+                }
+        }
+
+        private BigDecimal calculateDistanceKm(BigDecimal startLat, BigDecimal startLng, BigDecimal endLat, BigDecimal endLng) {
+                double earthRadiusKm = 6371.0d;
+                double latDistance = Math.toRadians(endLat.doubleValue() - startLat.doubleValue());
+                double lngDistance = Math.toRadians(endLng.doubleValue() - startLng.doubleValue());
+                double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                                + Math.cos(Math.toRadians(startLat.doubleValue()))
+                                * Math.cos(Math.toRadians(endLat.doubleValue()))
+                                * Math.sin(lngDistance / 2) * Math.sin(lngDistance / 2);
+                double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return BigDecimal.valueOf(earthRadiusKm * c).setScale(2, RoundingMode.HALF_UP);
+        }
+
+        private BigDecimal calculateDeliveryCharge(BigDecimal distanceKm) {
+                if (distanceKm == null) {
+                        return BigDecimal.valueOf(10).setScale(2, RoundingMode.HALF_UP);
+                }
+                BigDecimal base = BigDecimal.valueOf(10);
+                BigDecimal extraDistance = distanceKm.subtract(BigDecimal.valueOf(5)).max(BigDecimal.ZERO);
+                BigDecimal extraCharge = extraDistance.multiply(BigDecimal.ONE, MathContext.DECIMAL64);
+                return base.add(extraCharge).setScale(2, RoundingMode.HALF_UP);
+        }
+
+        private Integer estimateDeliveryMinutes(BigDecimal distanceKm) {
+                if (distanceKm == null) {
+                        return 30;
+                }
+                double averageSpeedKmPerHour = 22.0d;
+                int minutes = (int) Math.ceil((distanceKm.doubleValue() / averageSpeedKmPerHour) * 60.0d);
+                return Math.max(minutes, 8);
         }
 
         public List<Order> getOrdersByCustomer(Long customerId) {
@@ -199,7 +288,13 @@ public class OrderService {
                 Order order = orderRepository.findById(orderId)
                                 .orElseThrow(() -> new EntityNotFoundException("Order not found with id: " + orderId));
                 try {
-                        order.setStatus(OrderStatus.valueOf(status.trim().toUpperCase()));
+                        OrderStatus newStatus = OrderStatus.valueOf(status.trim().toUpperCase());
+                        if (newStatus == OrderStatus.ACCEPTED_BY_DRIVER
+                                        || newStatus == OrderStatus.OUT_FOR_DELIVERY
+                                        || newStatus == OrderStatus.DELIVERED) {
+                                throw new IllegalArgumentException("Driver-owned delivery statuses can only be set by driver");
+                        }
+                        order.setStatus(newStatus);
                 } catch (Exception ex) {
                         throw new IllegalArgumentException("Invalid status: " + status);
                 }

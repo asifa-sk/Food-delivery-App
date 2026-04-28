@@ -101,9 +101,9 @@ export default function FoodItemCard({ item, isFavorite = false, onToggleFavorit
   };
 
   return (
-    <div className="group overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition-all hover:shadow-lg">
+    <div className="group overflow-hidden rounded-[1.75rem] border border-brand-100 bg-white shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-float">
       <div className="flex flex-col sm:flex-row">
-        <div className="relative h-40 sm:h-auto sm:w-56 md:w-64 flex-shrink-0 overflow-hidden bg-slate-100">
+        <div className="relative h-40 flex-shrink-0 overflow-hidden bg-surface-100 sm:h-auto sm:w-56 md:w-64">
           <img
             src={imageSrc}
             alt={item.name}
@@ -116,7 +116,7 @@ export default function FoodItemCard({ item, isFavorite = false, onToggleFavorit
             <button
               onClick={onToggleFavorite}
               className={`absolute top-4 right-4 rounded-full p-2 transition ${
-                isFavorite ? 'bg-rose-500 text-white' : 'bg-white/90 text-slate-500 hover:text-rose-500'
+                isFavorite ? 'bg-accent-500 text-white' : 'bg-white/90 text-ink-500 hover:text-accent-500'
               }`}
             >
               <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
@@ -128,13 +128,13 @@ export default function FoodItemCard({ item, isFavorite = false, onToggleFavorit
           <div>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">{item.name}</h3>
-                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600">
+                <h3 className="text-xl font-bold text-ink-800">{item.name}</h3>
+                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-600">
                   {item.description || 'Freshly prepared and delivered hot.'}
                 </p>
               </div>
               {item.rating && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-2 py-1 text-xs font-semibold text-success-700">
                   <Star size={12} fill="currentColor" />
                   {item.rating}
                 </span>
@@ -142,16 +142,16 @@ export default function FoodItemCard({ item, isFavorite = false, onToggleFavorit
             </div>
 
             <div className="mt-4">
-              <span className="text-3xl font-bold text-orange-500">Rs. {item.price}</span>
-              <p className="mt-1 text-sm text-slate-500">Top pick in {item.restaurantName || 'this restaurant'}</p>
+              <span className="text-3xl font-bold text-brand-600">Rs. {item.price}</span>
+              <p className="mt-1 text-sm text-ink-500">Top pick in {item.restaurantName || 'this restaurant'}</p>
             </div>
           </div>
 
           <div className="mt-5 flex items-center justify-between gap-4">
-            <div className="text-sm font-medium text-slate-500">{item.category || 'Popular item'}</div>
+            <div className="text-sm font-medium text-ink-500">{item.category || 'Popular item'}</div>
             <button
               onClick={handleAddToCart}
-              className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 font-semibold text-white transition hover:bg-orange-600 group-hover:shadow-md"
+              className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-accent-500 px-5 py-3 font-semibold text-white transition hover:from-brand-600 hover:to-accent-600 group-hover:shadow-glow"
             >
               <Plus size={18} />
               Add to Cart

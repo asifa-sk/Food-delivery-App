@@ -26,7 +26,7 @@ function Field({ label, id, type = 'text', icon: Icon, value, onChange, error, p
           placeholder={placeholder}
           className={`w-full ${Icon ? 'pl-9' : 'pl-4'} ${rightSlot ? 'pr-10' : 'pr-4'} py-2.5 rounded-xl border text-sm
             focus:outline-none focus:ring-2 transition
-            ${error ? 'border-red-400 focus:ring-red-200 bg-red-50' : 'border-gray-200 focus:ring-orange-200 bg-white'}`}
+            ${error ? 'border-red-400 focus:ring-red-200 bg-red-50' : 'border-gray-200 focus:ring-brand-200 bg-white'}`}
         />
         {rightSlot && (
           <div className="absolute inset-y-0 right-3 flex items-center">{rightSlot}</div>
@@ -77,8 +77,8 @@ function OtpBoxes({ value, onChange }) {
           onKeyDown={(e) => handleKeyDown(e, i)}
           onPaste={handlePaste}
           className={`w-11 h-13 text-center text-xl font-bold rounded-xl border-2 focus:outline-none transition
-            ${d ? 'border-orange-400 bg-orange-50 text-orange-600' : 'border-gray-200 bg-white text-gray-800'}
-            focus:border-orange-400`}
+            ${d ? 'border-brand-400 bg-brand-50 text-brand-600' : 'border-gray-200 bg-white text-gray-800'}
+            focus:border-brand-400`}
         />
       ))}
     </div>
@@ -233,7 +233,7 @@ export default function AuthPage({ onAuthSuccess }) {
     <button
       type="submit"
       disabled={loading}
-      className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed
+      className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed
         text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2 mt-1"
     >
       {loading ? (
@@ -249,17 +249,17 @@ export default function AuthPage({ onAuthSuccess }) {
 
   // ═══════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-[#FF5722] to-[#FFCCBC] flex items-center justify-center p-4">
 
       {/* Decorative blobs */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-72 h-72 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-1/2 translate-y-1/2" />
+      <div className="absolute top-0 left-0 w-72 h-72 bg-accent-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 right-0 w-72 h-72 bg-accent-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-1/2 translate-y-1/2" />
 
       <div className="relative w-full max-w-md">
 
         {/* Logo / Brand */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500 rounded-2xl shadow-lg mb-3">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-brand-500 rounded-2xl shadow-lg mb-3">
             <span className="text-3xl">🍔</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-800">Foodyy</h1>
@@ -278,7 +278,7 @@ export default function AuthPage({ onAuthSuccess }) {
                   onClick={() => switchView(v)}
                   className={`flex-1 py-4 text-sm font-semibold transition
                     ${view === v
-                      ? 'text-orange-500 border-b-2 border-orange-500'
+                      ? 'text-brand-500 border-b-2 border-brand-500'
                       : 'text-gray-400 hover:text-gray-600'}`}
                 >
                   {v === VIEWS.LOGIN ? 'Login' : 'Create Account'}
@@ -337,7 +337,7 @@ export default function AuthPage({ onAuthSuccess }) {
                     id="role"
                     value={reg.role}
                     onChange={(e) => setReg({ ...reg, role: e.target.value })}
-                    className="w-full py-2.5 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-200"
+                    className="w-full py-2.5 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-200"
                   >
                     <option value="customer">Customer</option>
                     <option value="restaurant">Restaurant</option>
@@ -346,7 +346,7 @@ export default function AuthPage({ onAuthSuccess }) {
                 <SubmitBtn label="Create Account" />
                 <p className="text-center text-xs text-gray-400">
                   By signing up you agree to our{' '}
-                  <span className="text-orange-500 cursor-pointer hover:underline">Terms & Privacy Policy</span>
+                  <span className="text-brand-500 cursor-pointer hover:underline">Terms & Privacy Policy</span>
                 </p>
               </form>
             )}
@@ -366,7 +366,7 @@ export default function AuthPage({ onAuthSuccess }) {
                   <h2 className="font-bold text-gray-800 text-lg">Check your inbox</h2>
                   <p className="text-sm text-gray-500 mt-1">
                     We've sent a 6-digit code to{' '}
-                    <span className="font-semibold text-orange-500">{reg.email}</span>
+                    <span className="font-semibold text-brand-500">{reg.email}</span>
                   </p>
                 </div>
 
@@ -383,7 +383,7 @@ export default function AuthPage({ onAuthSuccess }) {
                   ) : (
                     <button
                       type="button" onClick={handleResendOtp}
-                      className="text-orange-500 hover:underline font-medium"
+                      className="text-brand-500 hover:underline font-medium"
                     >
                       Didn't get it? Resend OTP
                     </button>
@@ -416,7 +416,7 @@ export default function AuthPage({ onAuthSuccess }) {
                 />
                 <div className="flex justify-end -mt-2">
                   <button type="button" onClick={() => switchView(VIEWS.FORGOT)}
-                    className="text-xs text-orange-500 hover:underline font-medium">
+                    className="text-xs text-brand-500 hover:underline font-medium">
                     Forgot Password?
                   </button>
                 </div>
@@ -437,10 +437,10 @@ export default function AuthPage({ onAuthSuccess }) {
                     <div className="text-4xl mb-3">✉️</div>
                     <h2 className="font-bold text-gray-800 text-lg">Reset link sent!</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      Check <span className="font-semibold text-orange-500">{forgotEmail}</span> for the reset link.
+                      Check <span className="font-semibold text-brand-500">{forgotEmail}</span> for the reset link.
                     </p>
                     <button onClick={() => { setForgotSent(false); switchView(VIEWS.LOGIN); }}
-                      className="mt-5 text-sm text-orange-500 hover:underline font-medium">
+                      className="mt-5 text-sm text-brand-500 hover:underline font-medium">
                       Back to Login
                     </button>
                   </div>

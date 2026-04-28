@@ -3,8 +3,10 @@ package com.foodapp.controller;
 import com.foodapp.dto.PlaceOrderRequest;
 import com.foodapp.dto.QuickOrderRequest;
 import com.foodapp.dto.OrderSummaryResponse;
+import com.foodapp.dto.DeliveryTrackingResponse;
 import com.foodapp.dto.UpdateOrderStatusRequest;
 import com.foodapp.entity.Order;
+import com.foodapp.service.DeliveryTrackingService;
 import com.foodapp.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +25,11 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final DeliveryTrackingService deliveryTrackingService;
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, DeliveryTrackingService deliveryTrackingService) {
         this.orderService = orderService;
+        this.deliveryTrackingService = deliveryTrackingService;
     }
 
     /**
@@ -78,6 +82,11 @@ public class OrderController {
     @GetMapping("/customer/{customerId}/track/{orderId}")
     public ResponseEntity<Order> getOrderByIdAndCustomer(@PathVariable Long customerId, @PathVariable Long orderId) {
         return ResponseEntity.ok(orderService.getOrderByIdAndCustomer(orderId, customerId));
+    }
+
+    @GetMapping("/customer/{customerId}/track/{orderId}/live")
+    public ResponseEntity<DeliveryTrackingResponse> getLiveTrackingByCustomer(@PathVariable Long customerId, @PathVariable Long orderId) {
+        return ResponseEntity.ok(deliveryTrackingService.getTrackingSnapshotForCustomer(customerId, orderId));
     }
 
     @PatchMapping("/customer/{customerId}/{orderId}/status")

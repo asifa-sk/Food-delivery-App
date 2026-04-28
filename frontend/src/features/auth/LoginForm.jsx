@@ -73,13 +73,13 @@ export default function LoginForm() {
       )}
 
       {notVerified && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm px-4 py-3 rounded-xl">
+        <div className="bg-accent-100 border border-accent-200 text-brand-700 text-sm px-4 py-3 rounded-xl">
           <p className="font-semibold mb-1">Account not verified</p>
           <p>Please verify your email before logging in.{' '}
             <Link
               to="/verify-otp"
               state={{ email: form.email }}
-              className="underline font-medium text-orange-600 hover:text-orange-700"
+              className="underline font-medium text-brand-600 hover:text-brand-700"
             >
               Verify now →
             </Link>
@@ -106,10 +106,10 @@ export default function LoginForm() {
         error={errors.password}
       />
       <div className="flex items-center justify-between -mt-1">
-        <Link to="/email-otp-login" className="text-xs text-orange-600 hover:underline font-medium">
+        <Link to="/email-otp-login" className="text-xs text-brand-600 hover:underline font-medium">
           Login with Email OTP
         </Link>
-        <Link to="/forgot-password" className="text-xs text-gray-500 hover:text-orange-600 hover:underline font-medium">
+        <Link to="/forgot-password" className="text-xs text-gray-500 hover:text-brand-600 hover:underline font-medium">
           Forgot Password?
         </Link>
       </div>

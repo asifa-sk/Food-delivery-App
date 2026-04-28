@@ -56,7 +56,7 @@ export default function Cart({ items, customerId, restaurantId, deliveryAddress:
         placeholder="Delivery address"
         value={deliveryAddress}
         onChange={(e) => setDeliveryAddress(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-brand-200"
       />
 
       {error && <p className="text-xs text-red-500 mb-2">{error}</p>}

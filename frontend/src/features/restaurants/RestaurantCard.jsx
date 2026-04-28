@@ -3,7 +3,7 @@ export default function RestaurantCard({ restaurant }) {
 
   return (
     <div className="bg-white rounded-2xl shadow-md hover:shadow-lg transition overflow-hidden border border-gray-100">
-      <div className="bg-orange-100 h-36 flex items-center justify-center text-5xl">
+      <div className="bg-accent-100 h-36 flex items-center justify-center text-5xl">
         🍽️
       </div>
       <div className="p-5">
@@ -17,7 +17,7 @@ export default function RestaurantCard({ restaurant }) {
         <p className="text-gray-400 text-xs">{phone}</p>
         <button
           disabled={!active}
-          className="mt-4 w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2 rounded-full transition"
+          className="mt-4 w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2 rounded-full transition"
         >
           {active ? 'Order Now' : 'Currently Unavailable'}
         </button>

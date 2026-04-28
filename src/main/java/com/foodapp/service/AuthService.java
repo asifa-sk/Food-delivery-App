@@ -15,6 +15,7 @@ import com.foodapp.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -57,6 +58,7 @@ public class AuthService {
     private final RestaurantRepository restaurantRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private com.foodapp.service.DriverService driverService;
 
     @Value("${app.expose-otp-in-response:false}")
     private boolean exposeOtpInResponse;
@@ -67,6 +69,12 @@ public class AuthService {
         this.restaurantRepository = restaurantRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+    }
+
+    // Setter for DriverService to avoid circular constructor injection
+    @Autowired(required = false)
+    public void setDriverService(com.foodapp.service.DriverService driverService) {
+        this.driverService = driverService;
     }
 
     // ── Register Customer ─────────────────────────────────────────────────────
@@ -160,8 +168,12 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(req.getPassword()));
 
         Role role = Role.CUSTOMER;
-        if (req.getRole() != null && req.getRole().equalsIgnoreCase("restaurant")) {
-            role = Role.RESTAURANT;
+        if (req.getRole() != null) {
+            if (req.getRole().equalsIgnoreCase("restaurant")) {
+                role = Role.RESTAURANT;
+            } else if (req.getRole().equalsIgnoreCase("driver")) {
+                role = Role.DRIVER;
+            }
         }
         user.setRole(role);
         user.setVerified(false);
@@ -216,6 +228,18 @@ public class AuthService {
         User user = optUser.get();
         user.setVerified(true);
         userRepository.save(user);
+
+        // If the verified user is a driver, finalize pending driver record
+        try {
+            if (user.getRole() == Role.DRIVER && this.driverService != null) {
+                com.foodapp.entity.Driver created = this.driverService.finalizePendingDriver(user.getEmail());
+                if (created != null) {
+                    log.info("Finalized pending driver record for {} (id={})", user.getEmail(), created.getId());
+                }
+            }
+        } catch (Exception ex) {
+            log.error("Failed to finalize pending driver for {}: {}", user.getEmail(), ex.getMessage(), ex);
+        }
 
         AuthResponse response = AuthResponse.ok("Email verified successfully. You can now log in.");
         response.setEmail(user.getEmail());

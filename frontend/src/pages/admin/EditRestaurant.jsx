@@ -118,7 +118,7 @@ export default function EditRestaurantPage() {
 
           {loading ? (
             <div className="py-12 text-center text-gray-400">
-              <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <div className="w-8 h-8 border-2 border-brand-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
               Loading...
             </div>
           ) : (
@@ -141,7 +141,7 @@ export default function EditRestaurantPage() {
                       name={f.name}
                       value={form[f.name]}
                       onChange={handleChange}
-                      className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-gray-50 focus:bg-white transition"
+                      className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-gray-50 focus:bg-white transition"
                     />
                   </div>
                 ))}
@@ -155,12 +155,12 @@ export default function EditRestaurantPage() {
                     </div>
                   )}
                   <div
-                    className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition"
+                    className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     {uploading ? (
-                      <div className="flex items-center justify-center gap-2 text-orange-500">
-                        <div className="w-5 h-5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                      <div className="flex items-center justify-center gap-2 text-brand-500">
+                        <div className="w-5 h-5 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
                         <span className="text-sm font-medium">Uploading...</span>
                       </div>
                     ) : (
@@ -182,14 +182,14 @@ export default function EditRestaurantPage() {
                     value={form.imageUrl}
                     onChange={handleImageUrlChange}
                     placeholder="https://example.com/image.jpg"
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-gray-50 focus:bg-white transition"
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-gray-50 focus:bg-white transition"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={saving || uploading}
-                  className="w-full mt-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 transition disabled:opacity-60"
+                  className="w-full mt-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 transition disabled:opacity-60"
                 >
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>

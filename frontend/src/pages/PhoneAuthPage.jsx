@@ -2,7 +2,7 @@ import PhoneAuthForm from '../features/auth/PhoneAuthForm';
 
 export default function PhoneAuthPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-surface-50 to-accent-100 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-6">
@@ -17,7 +17,7 @@ export default function PhoneAuthPage() {
 
         <p className="text-center text-sm text-gray-400 mt-6">
           Prefer email?{' '}
-          <a href="/login" className="text-orange-600 hover:underline font-medium">
+          <a href="/login" className="text-brand-600 hover:underline font-medium">
             Sign in with email
           </a>
         </p>

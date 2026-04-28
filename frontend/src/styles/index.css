@@ -3,11 +3,82 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+  :root {
+    color-scheme: light;
   }
 
   * {
     box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen text-slate-900 antialiased;
+    background-image:
+      radial-gradient(circle at top left, rgba(255, 87, 34, 0.18), transparent 30%),
+      radial-gradient(circle at top right, rgba(255, 204, 188, 0.28), transparent 24%),
+      linear-gradient(180deg, #fff8f0 0%, #ffe5db 38%, #fff8f0 100%);
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply relative min-h-screen overflow-hidden;
+    background-image:
+      radial-gradient(circle at 0% 0%, rgba(255, 87, 34, 0.16), transparent 24%),
+      radial-gradient(circle at 100% 20%, rgba(255, 204, 188, 0.24), transparent 26%);
+  }
+
+  .app-shell::before {
+    content: '';
+    @apply pointer-events-none absolute inset-x-0 top-0 h-72;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0));
+  }
+
+  .panel-surface {
+    @apply rounded-[28px] border border-brand-200/80 bg-white/90 shadow-[0_24px_80px_rgba(255,87,34,0.12)] backdrop-blur;
+  }
+
+  .panel-muted {
+    @apply rounded-[24px] border border-brand-200/80 bg-gradient-to-br from-white via-brand-50 to-brand-100;
+  }
+
+  .panel-dark {
+    @apply rounded-[28px] border border-brand-300/80 bg-gradient-to-br from-brand-500 via-brand-500 to-brand-400 text-white shadow-[0_28px_90px_rgba(255,87,34,0.28)];
+  }
+
+  .hero-badge {
+    @apply inline-flex items-center gap-2 rounded-full border border-brand-300 bg-white/90 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-700 shadow-sm;
+  }
+
+  .metric-card {
+    @apply panel-surface p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_28px_85px_rgba(255,87,34,0.18)];
+  }
+
+  .data-table {
+    @apply w-full text-sm;
+  }
+
+  .data-table thead tr {
+    @apply border-b border-brand-100;
+  }
+
+  .data-table th {
+    @apply px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-600;
+  }
+
+  .data-table td {
+    @apply px-6 py-4 align-top text-slate-700;
+  }
+
+  .data-table tbody tr {
+    @apply border-b border-brand-100/80 transition hover:bg-brand-50;
   }
 }

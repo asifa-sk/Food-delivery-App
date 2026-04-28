@@ -1,226 +1,258 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ChefHat, ClipboardList, Home, Menu, Package, Settings, Star, Users, X } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight, BarChart3, ChefHat, ClipboardList, Package } from 'lucide-react';
+import { useToast } from '../../components/common/Toast';
+import { onOrderNotification } from '../../utils/notificationService';
+import { formatOrderCurrency, formatOrderDateTime, normalizeOrder } from '../../utils/orderUtils';
+import RestaurantShell from '../../components/restaurant/RestaurantShell';
+import { readStoredJson } from '../../utils/storage';
 
 const API = 'http://localhost:8081/api';
 
 const STATUS_COLOR = {
   DELIVERED: 'bg-green-100 text-green-700',
   CANCELLED: 'bg-red-100 text-red-700',
+  NEARBY: 'bg-orange-100 text-orange-700',
   OUT_FOR_DELIVERY: 'bg-blue-100 text-blue-700',
+  PICKED_UP: 'bg-sky-100 text-sky-700',
+  ARRIVED_AT_RESTAURANT: 'bg-cyan-100 text-cyan-700',
+  DRIVER_ASSIGNED: 'bg-brand-50 text-brand-700',
+  ACCEPTED_BY_DRIVER: 'bg-brand-100 text-brand-700',
   PREPARING: 'bg-purple-100 text-purple-700',
   CONFIRMED: 'bg-indigo-100 text-indigo-700',
-  PENDING: 'bg-yellow-100 text-yellow-700',
+  PENDING: 'bg-brand-100 text-brand-700',
 };
 
-const NAV_ITEMS = [
-  { name: 'Dashboard', path: '/restaurant/dashboard', icon: Home },
-  { name: 'Orders', path: '/restaurant/orders', icon: Package },
-  { name: 'Menu', path: '/restaurant/food-list', icon: ChefHat },
-  { name: 'Add Food', path: '/restaurant/add-food', icon: ClipboardList },
-  { name: 'Reviews', path: '/restaurant/reviews', icon: Star },
-  { name: 'Customers', path: '/restaurant/customers', icon: Users },
-  { name: 'Reports', path: '/restaurant/reports', icon: BarChart3 },
-  { name: 'Settings', path: '/restaurant/settings', icon: Settings },
-];
-
 export default function RestaurantDashboard() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = readStoredJson('user', {});
+  const { showToast } = useToast();
   const [restaurant, setRestaurant] = useState(null);
   const [orders, setOrders] = useState([]);
   const [menuCount, setMenuCount] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
+    const off = onOrderNotification((payload) => {
+      const msg = payload.eta ? `Order #${payload.orderId} is ${payload.status} - ETA: ${formatOrderDateTime(payload.eta)}` : `Order #${payload.orderId} is ${payload.status}`;
+      showToast(msg, { type: 'info', duration: 5000 });
+    });
+    return off;
+  }, [showToast]);
+
+  const loadDashboard = useCallback(async () => {
     const ownerId = user.id || user.userId;
-    if (!ownerId) { setLoading(false); return; }
+    if (!ownerId) {
+      setLoading(false);
+      return;
+    }
 
-    fetch(`${API}/restaurants/owner/${ownerId}`)
-      .then(r => r.json())
-      .then(data => {
-        const arr = Array.isArray(data) ? data : [];
-        if (arr.length > 0) {
-          const r = arr[0];
-          setRestaurant(r);
-          const rid = r.id || r.restaurantId;
-          Promise.all([
-            fetch(`${API}/orders/restaurant/${rid}`).then(res => res.json()),
-            fetch(`${API}/food/restaurant/${rid}/all`).then(res => res.json()),
-          ]).then(([orderData, menuData]) => {
-            setOrders(Array.isArray(orderData) ? orderData.slice(0, 5) : []);
-            setMenuCount(Array.isArray(menuData) ? menuData.length : 0);
-          }).catch(() => {});
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    try {
+      const ownerRes = await fetch(`${API}/restaurants/owner/${ownerId}`);
+      const data = await ownerRes.json();
+      const arr = Array.isArray(data) ? data : [];
+      if (arr.length === 0) {
+        setRestaurant(null);
+        setOrders([]);
+        setMenuCount(0);
+        return;
+      }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login', { replace: true });
-  };
+      const r = arr[0];
+      setRestaurant(r);
+      const rid = r.id || r.restaurantId;
+      const [orderRes, menuRes] = await Promise.all([
+        fetch(`${API}/orders/restaurant/${rid}`),
+        fetch(`${API}/food/restaurant/${rid}/all`),
+      ]);
+      const [orderData, menuData] = await Promise.all([orderRes.json(), menuRes.json()]);
+      setOrders(Array.isArray(orderData) ? orderData.map(normalizeOrder).slice(0, 5) : []);
+      setMenuCount(Array.isArray(menuData) ? menuData.length : 0);
+    } catch {
+      // keep current values if refresh fails
+    } finally {
+      setLoading(false);
+    }
+  }, [user.id, user.userId]);
 
-  const activeOrders = orders.filter(o => !['DELIVERED', 'CANCELLED'].includes(o.status)).length;
-  const revenue = orders.reduce((sum, o) => sum + Number(o.totalPrice ?? 0), 0);
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    const off = onOrderNotification(() => {
+      loadDashboard();
+    });
+    return off;
+  }, [loadDashboard]);
+
+  const activeOrders = orders.filter((o) => !['DELIVERED', 'CANCELLED'].includes(o.status)).length;
+  const revenue = orders.reduce((sum, order) => sum + Number(order.totalPrice || 0), 0);
+
+  const quickLinks = [
+    { to: '/restaurant/orders', label: 'Order board', description: 'Stay on top of incoming orders and status changes.', icon: Package },
+    { to: '/restaurant/food-list', label: 'Menu manager', description: 'Refine presentation and keep your catalog sharp.', icon: ChefHat },
+    { to: '/restaurant/add-food', label: 'Add new dish', description: 'Launch new menu items with the same polished look.', icon: ClipboardList },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform md:translate-x-0 md:static md:inset-0`}>
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center font-bold text-white">R</div>
-            <span className="font-bold text-gray-900">Restaurant Portal</span>
-          </div>
-          <button onClick={() => setSidebarOpen(false)} className="md:hidden p-1 rounded-lg hover:bg-gray-100">
-            <X size={20} />
-          </button>
+    <RestaurantShell
+      title="Restaurant Dashboard"
+      eyebrow="Partner command center"
+      subtitle={restaurant ? `${restaurant.name} • ${restaurant.address}` : 'Operations, menu and guest activity'}
+    >
+      {loading ? (
+        <div className="panel-surface py-20 text-center text-slate-500">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-brand-400 border-t-transparent" />
+          Loading your dashboard...
         </div>
-        <nav className="p-4 space-y-2">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${isActive ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:bg-gray-100'}`}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Icon size={20} />
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
-
-      {sidebarOpen && <div className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden" onClick={() => setSidebarOpen(false)} />}
-
-      <div className="flex-1 md:ml-0">
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 rounded-lg hover:bg-gray-100">
-                <Menu size={20} />
-              </button>
-              <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="font-medium text-gray-900">{user.name || 'Owner'}</p>
-                <p className="text-sm text-gray-500">{restaurant?.name}</p>
-              </div>
-              <button onClick={handleLogout} className="px-4 py-2 text-sm text-red-500 hover:text-red-600 font-medium">Logout</button>
-            </div>
-          </div>
-        </header>
-
-        <div className="p-6">
-          {loading ? (
-            <div className="text-center py-20 text-gray-400">
-              <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              Loading your dashboard...
-            </div>
-          ) : !restaurant ? (
-            <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <h2 className="text-xl font-bold text-gray-800 mb-2">No Restaurant Found</h2>
-              <p className="text-gray-500 text-sm">Contact admin to link your account to a restaurant.</p>
-            </div>
-          ) : (
-            <>
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Welcome back!</h2>
-                <p className="text-gray-500 text-sm mt-1">{restaurant.name} · {restaurant.address}</p>
+      ) : !restaurant ? (
+        <div className="panel-surface py-20 text-center">
+          <h2 className="text-2xl font-black tracking-tight text-slate-950">No restaurant found</h2>
+          <p className="mt-2 text-sm text-slate-500">Contact admin to link your account to a restaurant.</p>
+        </div>
+      ) : (
+        <>
+          <section className="panel-dark relative overflow-hidden p-6 md:p-8">
+            <div className="absolute inset-y-0 right-0 hidden w-1/3 bg-[radial-gradient(circle_at_top,rgba(255,231,204,0.3),transparent_62%)] lg:block" />
+            <div className="relative grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
+              <div>
+                <div className="hero-badge border-white/30 bg-white/10 text-white">Hospitality cockpit</div>
+                <h2 className="mt-4 text-3xl font-black tracking-tight text-white md:text-5xl">Make every shift feel organised.</h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-brand-100 md:text-base">
+                  Track orders, revenue, menu activity and fulfillment performance from a single consistent workspace.
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                {[
-                  { label: 'Menu Items', value: menuCount, color: 'bg-orange-500' },
-                  { label: 'Total Orders', value: orders.length, color: 'bg-blue-500' },
-                  { label: 'Active Orders', value: activeOrders, color: 'bg-yellow-500' },
-                  { label: 'Revenue', value: `Rs.${revenue.toFixed(0)}`, color: 'bg-emerald-500' },
-                ].map(s => (
-                  <div key={s.label} className={`rounded-2xl p-5 text-white shadow-sm ${s.color}`}>
-                    <div className="mb-3">
-                      <span className="text-sm opacity-90">{s.label}</span>
+              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                <div className="rounded-[24px] border border-white/20 bg-white/10 p-5 backdrop-blur">
+                  <p className="text-sm text-brand-100">Today&apos;s active orders</p>
+                  <p className="mt-3 text-3xl font-black text-white">{activeOrders}</p>
+                </div>
+                <div className="rounded-[24px] border border-white/20 bg-white/10 p-5 backdrop-blur">
+                  <p className="text-sm text-brand-100">Recent revenue</p>
+                  <p className="mt-3 text-3xl font-black text-white">{formatOrderCurrency(revenue)}</p>
+                </div>
+                <div className="rounded-[24px] border border-white/20 bg-white/10 p-5 backdrop-blur">
+                  <p className="text-sm text-brand-100">Live menu count</p>
+                  <p className="mt-3 text-3xl font-black text-white">{menuCount ?? '-'}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: 'Menu Items', value: menuCount, accent: 'from-brand-500 to-brand-400' },
+              { label: 'Recent Orders', value: orders.length, accent: 'from-brand-400 to-brand-300' },
+              { label: 'Active Orders', value: activeOrders, accent: 'from-brand-500 to-brand-300' },
+              { label: 'Revenue', value: formatOrderCurrency(revenue), accent: 'from-brand-400 to-brand-200' },
+            ].map((stat) => (
+              <div key={stat.label} className="metric-card">
+                <div className={`inline-flex rounded-2xl bg-gradient-to-br px-3 py-1.5 text-xs font-bold text-white ${stat.accent}`}>
+                  Live
+                </div>
+                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{stat.label}</p>
+                <p className="mt-3 text-4xl font-black tracking-tight text-slate-950">{stat.value ?? '-'}</p>
+              </div>
+            ))}
+          </section>
+
+          <section className="mt-8 grid gap-4 lg:grid-cols-3">
+            {quickLinks.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.to} to={item.to} className="panel-surface group p-6 transition hover:-translate-y-1 hover:shadow-[0_28px_80px_rgba(15,23,42,0.12)]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="rounded-2xl bg-brand-50 p-3 text-brand-500">
+                        <Icon size={20} />
+                      </div>
+                      <h3 className="mt-5 text-xl font-black tracking-tight text-slate-950">{item.label}</h3>
+                      <p className="mt-2 text-sm leading-7 text-slate-500">{item.description}</p>
                     </div>
-                    <p className="text-2xl font-bold">{s.value ?? '-'}</p>
+                    <ArrowUpRight className="mt-1 text-slate-300 transition group-hover:text-brand-500" size={18} />
                   </div>
-                ))}
-              </div>
+                </Link>
+              );
+            })}
+          </section>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Weekly Sales</h3>
-                  <div className="h-64 flex items-center justify-center text-gray-400">
-                    <BarChart3 size={48} />
-                    <span className="ml-2">Chart will be implemented</span>
-                  </div>
+          <section className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="panel-surface overflow-hidden">
+              <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Recent Orders</p>
+                  <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">Service queue</h3>
                 </div>
-                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Order Status</h3>
-                  <div className="space-y-3">
-                    {Object.entries(STATUS_COLOR).map(([status, color]) => {
-                      const count = orders.filter(o => o.status === status).length;
-                      return (
-                        <div key={status} className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">{status.replace('_', ' ')}</span>
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${color.replace('text-', 'bg-').replace('bg-', 'bg-').split(' ')[0]}`} />
-                            <span className="text-sm font-medium">{count}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                <Link to="/restaurant/orders" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-100">
+                  View all
+                </Link>
               </div>
-
-              {orders.length > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-                  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h3 className="font-bold text-gray-900">Recent Orders</h3>
-                    <Link to="/restaurant/orders" className="text-emerald-500 text-sm font-semibold hover:underline">View all</Link>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-50">
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Order</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Customer</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Items</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Total</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Status</th>
+              {orders.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((order) => (
+                        <tr key={order.id}>
+                          <td className="font-semibold text-slate-800">#{order.id}</td>
+                          <td>{order.customer?.name || order.customerName || '-'}</td>
+                          <td className="max-w-[240px] text-xs">
+                            {order.items.length > 0 ? order.items.map((item) => `${item.foodItem?.name || item.name || 'Item'} x${item.quantity}`).join(', ') : '-'}
+                          </td>
+                          <td className="font-semibold text-slate-900">{formatOrderCurrency(order.totalPrice)}</td>
+                          <td>
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_COLOR[order.status] || STATUS_COLOR.PENDING}`}>{order.status}</span>
+                            {order.deliveredAt ? <div className="mt-1 text-[11px] text-emerald-700">{formatOrderDateTime(order.deliveredAt)}</div> : null}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {orders.map(o => (
-                          <tr key={o.id} className="hover:bg-gray-50 transition">
-                            <td className="px-6 py-3 font-semibold text-gray-700">#{o.id}</td>
-                            <td className="px-6 py-3 text-gray-600">{o.customer?.name || '-'}</td>
-                            <td className="px-6 py-3 text-gray-500 text-xs max-w-[200px] truncate">
-                              {(o.orderItems || []).length > 0 ? (o.orderItems || []).map(i => `${i.foodItem?.name || 'Item'} x${i.quantity}`).join(', ') : '-'}
-                            </td>
-                            <td className="px-6 py-3 font-semibold text-gray-900">Rs.{Number(o.totalPrice ?? 0).toFixed(2)}</td>
-                            <td className="px-6 py-3">
-                              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[o.status] || STATUS_COLOR.PENDING}`}>{o.status}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
+              ) : (
+                <div className="px-6 py-14 text-center text-sm text-slate-500">Orders will appear here when customers place them.</div>
               )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+            </div>
+
+            <div className="panel-surface p-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-brand-50 p-3 text-brand-500">
+                  <BarChart3 size={20} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Order Status</p>
+                  <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">Current mix</h3>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                {Object.entries(STATUS_COLOR).map(([status, color]) => {
+                  const count = orders.filter((order) => order.status === status).length;
+                  return (
+                    <div key={status} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-sm font-medium text-slate-700">{status.replaceAll('_', ' ')}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${color}`}>{count}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+    </RestaurantShell>
   );
 }

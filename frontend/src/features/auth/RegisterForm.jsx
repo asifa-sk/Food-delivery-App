@@ -53,7 +53,7 @@ export default function RegisterForm() {
           id="role"
           value={form.role}
           onChange={handleChange}
-          className="w-full py-2.5 px-4 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-200"
+          className="w-full py-2.5 px-4 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-200"
         >
           <option value="customer">Customer</option>
           <option value="restaurant">Restaurant</option>

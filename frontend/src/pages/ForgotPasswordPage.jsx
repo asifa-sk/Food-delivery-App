@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-orange-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-surface-50 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-8">
         <div className="text-center mb-6">
           <span className="text-4xl">🔐</span>
@@ -149,7 +149,7 @@ export default function ForgotPasswordPage() {
 
         <p className="text-center text-sm text-gray-500 mt-5">
           Back to{' '}
-          <Link to="/login" className="text-orange-500 font-semibold hover:underline">
+          <Link to="/login" className="text-brand-500 font-semibold hover:underline">
             Login
           </Link>
         </p>

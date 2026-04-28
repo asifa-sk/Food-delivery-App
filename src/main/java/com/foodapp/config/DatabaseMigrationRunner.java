@@ -24,7 +24,7 @@ public class DatabaseMigrationRunner implements ApplicationRunner {
         migrate("restaurant status values to uppercase", "UPDATE restaurants SET status = UPPER(status) WHERE status IS NOT NULL");
         migrate("restaurant status enum definition", "ALTER TABLE restaurants MODIFY COLUMN status ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING'");
         migrate("order status values to uppercase", "UPDATE orders SET status = UPPER(status) WHERE status IS NOT NULL");
-        migrate("order status enum definition", "ALTER TABLE orders MODIFY COLUMN status ENUM('PENDING','CONFIRMED','PREPARING','OUT_FOR_DELIVERY','DELIVERED','CANCELLED') NOT NULL DEFAULT 'PENDING'");
+        migrate("order status enum definition", "ALTER TABLE orders MODIFY COLUMN status ENUM('PENDING','ACCEPTED_BY_DRIVER','CONFIRMED','PREPARING','OUT_FOR_DELIVERY','DELIVERED','CANCELLED') NOT NULL DEFAULT 'PENDING'");
         migrate("user phone_number nullable", "ALTER TABLE users MODIFY COLUMN phone_number VARCHAR(20) NULL DEFAULT NULL");
         migrate("ensure user otp_code column exists", "ALTER TABLE users ADD COLUMN otp_code VARCHAR(6) NULL");
         migrate("ensure fooditems rating column exists", "ALTER TABLE fooditems ADD COLUMN rating DECIMAL(3,2) NOT NULL DEFAULT 0.00");
@@ -67,6 +67,40 @@ public class DatabaseMigrationRunner implements ApplicationRunner {
                 )
                 """
             );
+            migrate(
+                "ensure drivers table exists",
+                """
+                CREATE TABLE IF NOT EXISTS drivers (
+                  driver_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  name VARCHAR(150) NOT NULL,
+                  phone VARCHAR(20) NULL,
+                  email VARCHAR(255) NOT NULL UNIQUE,
+                  password VARCHAR(255) NOT NULL,
+                  vehicle_details VARCHAR(255) NULL,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  approved BOOLEAN NOT NULL DEFAULT FALSE
+                ) ENGINE=InnoDB
+                """
+            );
+            migrate("ensure drivers approved column exists", "ALTER TABLE drivers ADD COLUMN approved BOOLEAN NOT NULL DEFAULT FALSE");
+            migrate("add delivered_at column to orders if missing", "ALTER TABLE orders ADD COLUMN delivered_at TIMESTAMP NULL");
+            migrate("add payment_method column to orders if missing", "ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) NULL");
+            migrate("add payment_status column to orders if missing", "ALTER TABLE orders ADD COLUMN payment_status VARCHAR(50) NULL");
+            migrate("add payment_reference column to orders if missing", "ALTER TABLE orders ADD COLUMN payment_reference VARCHAR(120) NULL");
+            migrate("force payment_method column type", "ALTER TABLE orders MODIFY COLUMN payment_method VARCHAR(50) NULL");
+            migrate("force payment_status column type", "ALTER TABLE orders MODIFY COLUMN payment_status VARCHAR(50) NULL");
+            migrate("force payment_reference column type", "ALTER TABLE orders MODIFY COLUMN payment_reference VARCHAR(120) NULL");
+            migrate("add driver_last_latitude column to orders if missing", "ALTER TABLE orders ADD COLUMN driver_last_latitude DECIMAL(10,8) NULL");
+            migrate("add driver_last_longitude column to orders if missing", "ALTER TABLE orders ADD COLUMN driver_last_longitude DECIMAL(11,8) NULL");
+            migrate("add driver_location_updated_at column to orders if missing", "ALTER TABLE orders ADD COLUMN driver_location_updated_at TIMESTAMP NULL");
+            migrate("add customer_latitude column to orders if missing", "ALTER TABLE orders ADD COLUMN customer_latitude DECIMAL(10,8) NULL");
+            migrate("add customer_longitude column to orders if missing", "ALTER TABLE orders ADD COLUMN customer_longitude DECIMAL(11,8) NULL");
+            migrate("add restaurant_latitude column to orders if missing", "ALTER TABLE orders ADD COLUMN restaurant_latitude DECIMAL(10,8) NULL");
+            migrate("add restaurant_longitude column to orders if missing", "ALTER TABLE orders ADD COLUMN restaurant_longitude DECIMAL(11,8) NULL");
+            migrate("add delivery_distance_km column to orders if missing", "ALTER TABLE orders ADD COLUMN delivery_distance_km DECIMAL(10,2) NULL");
+            migrate("add delivery_charge column to orders if missing", "ALTER TABLE orders ADD COLUMN delivery_charge DECIMAL(10,2) NULL");
+            migrate("add estimated_delivery_minutes column to orders if missing", "ALTER TABLE orders ADD COLUMN estimated_delivery_minutes INT NULL");
+            migrate("add driver_nearby_notified column to orders if missing", "ALTER TABLE orders ADD COLUMN driver_nearby_notified BOOLEAN NOT NULL DEFAULT FALSE");
     }
 
     private void migrate(String description, String sql) {

@@ -11,12 +11,12 @@ export default function Input({
   ...rest
 }) {
   return (
-    <div className={`flex flex-col gap-1 ${className}`}>
-      {label && (
-        <label htmlFor={id} className="text-sm font-medium text-gray-700">
+    <div className={`flex flex-col gap-1.5 ${className}`}>
+      {label ? (
+        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
           {label}
         </label>
-      )}
+      ) : null}
       <input
         id={id}
         name={id}
@@ -25,15 +25,14 @@ export default function Input({
         value={value}
         onChange={onChange}
         disabled={disabled}
-        className={`w-full px-4 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 transition
-          ${error
-            ? 'border-red-400 focus:ring-red-300 bg-red-50'
-            : 'border-gray-300 focus:ring-orange-300 bg-white'
-          }
-          ${disabled ? 'opacity-60 cursor-not-allowed bg-gray-100' : ''}`}
+        className={`w-full rounded-2xl border px-4 py-3 text-sm shadow-sm transition focus:outline-none focus:ring-2 ${
+          error
+            ? 'border-red-300 bg-red-50 text-red-700 focus:ring-red-200'
+            : 'border-brand-200 bg-white/90 text-slate-800 focus:border-brand-400 focus:ring-brand-200'
+        } ${disabled ? 'cursor-not-allowed bg-slate-100 text-slate-400' : ''}`}
         {...rest}
       />
-      {error && <p className="text-xs text-red-500 mt-0.5">{error}</p>}
+      {error ? <p className="text-xs font-medium text-red-500">{error}</p> : null}
     </div>
   );
 }

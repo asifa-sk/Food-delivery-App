@@ -16,7 +16,7 @@ function Field({ id, label, type = 'text', placeholder, value, error, onChange, 
           value={value}
           onChange={onChange}
           className={`w-full px-4 py-3 rounded-xl border text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 transition ${
-            error ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-orange-200 focus:border-orange-400'
+            error ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-brand-200 focus:border-brand-400'
           }`}
         />
       </div>
@@ -98,16 +98,16 @@ export default function CustomerSignupPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/30 to-black/75" />
 
         {/* Subtle orange tint stripe */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-orange-900/30 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-brand-900/35 via-transparent to-transparent" />
 
         {/* ── Top: Logo ── */}
         <div className="relative z-10 p-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center font-black text-white text-lg shadow-lg shadow-orange-500/40">
+            <div className="w-10 h-10 bg-brand-500 rounded-2xl flex items-center justify-center font-black text-white text-lg shadow-lg shadow-brand-500/40">
               F
             </div>
             <span className="text-white font-black text-2xl tracking-tight">Foodyy</span>
-            <span className="ml-1 px-2.5 py-0.5 rounded-full bg-orange-500/25 text-orange-300 text-[11px] font-bold border border-orange-400/30 uppercase tracking-wider">
+            <span className="ml-1 px-2.5 py-0.5 rounded-full bg-brand-500/25 text-accent-200 text-[11px] font-bold border border-brand-400/30 uppercase tracking-wider">
               Customer
             </span>
           </div>
@@ -115,12 +115,12 @@ export default function CustomerSignupPage() {
 
         {/* ── Middle: Hero copy ── */}
         <div className="relative z-10 px-10">
-          <p className="text-orange-400 text-xs font-bold uppercase tracking-widest mb-3">
+          <p className="text-brand-300 text-xs font-bold uppercase tracking-widest mb-3">
             ✦ &nbsp;Welcome to Foodyy
           </p>
           <h2 className="text-[2.6rem] font-black text-white leading-[1.15] mb-5">
             Great food,<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-rose-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 to-accent-200">
               delivered fast.
             </span>
           </h2>
@@ -155,7 +155,7 @@ export default function CustomerSignupPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center font-black text-white">F</div>
+            <div className="w-8 h-8 bg-brand-500 rounded-xl flex items-center justify-center font-black text-white">F</div>
             <span className="font-black text-xl text-gray-800">Foodyy</span>
           </div>
 
@@ -186,7 +186,7 @@ export default function CustomerSignupPage() {
                 type="checkbox"
                 checked={showPass}
                 onChange={e => setShowPass(e.target.checked)}
-                className="w-4 h-4 accent-orange-500 cursor-pointer"
+                className="w-4 h-4 accent-brand-500 cursor-pointer"
               />
               <label htmlFor="showPass" className="text-sm text-gray-500 cursor-pointer">Show passwords</label>
             </div>
@@ -194,7 +194,7 @@ export default function CustomerSignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-orange-200 disabled:opacity-60 disabled:cursor-not-allowed text-base"
+              className="mt-2 w-full bg-gradient-to-r from-brand-500 to-brand-700 hover:from-brand-600 hover:to-brand-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-brand-200 disabled:opacity-60 disabled:cursor-not-allowed text-base"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -208,11 +208,11 @@ export default function CustomerSignupPage() {
           <div className="mt-6 text-center space-y-3">
             <p className="text-sm text-gray-500">
               Already have an account?{' '}
-              <Link to="/login" className="text-orange-500 font-bold hover:underline">Sign in</Link>
+              <Link to="/login" className="text-brand-500 font-bold hover:underline">Sign in</Link>
             </p>
             <p className="text-sm text-gray-500">
               Own a restaurant?{' '}
-              <Link to="/restaurant-signup" className="text-orange-500 font-bold hover:underline">Register your restaurant →</Link>
+              <Link to="/restaurant-signup" className="text-brand-500 font-bold hover:underline">Register your restaurant →</Link>
             </p>
           </div>
 

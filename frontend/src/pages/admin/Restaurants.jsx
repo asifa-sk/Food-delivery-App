@@ -42,7 +42,7 @@ export default function RestaurantsAdminPage() {
   const statusColor = (status) => {
     if (status === 'APPROVED') return 'bg-green-100 text-green-700';
     if (status === 'REJECTED') return 'bg-red-100 text-red-700';
-    return 'bg-yellow-100 text-yellow-700';
+    return 'bg-brand-100 text-brand-700';
   };
 
   return (
@@ -61,7 +61,7 @@ export default function RestaurantsAdminPage() {
             placeholder='Search by name or address...'
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className='w-full sm:w-80 rounded-xl border border-gray-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400'
+            className='w-full sm:w-80 rounded-xl border border-gray-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400'
           />
         </div>
 
@@ -70,7 +70,7 @@ export default function RestaurantsAdminPage() {
 
         {loading ? (
           <div className='text-center py-16 text-gray-400'>
-            <div className='w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3'></div>
+            <div className='w-8 h-8 border-2 border-brand-400 border-t-transparent rounded-full animate-spin mx-auto mb-3'></div>
             Loading restaurants...
           </div>
         ) : restaurants.length === 0 ? (
@@ -116,7 +116,7 @@ export default function RestaurantsAdminPage() {
                       {r.status !== 'REJECTED' && (
                         <button onClick={() => handleAction(r.restaurantId || r.id, 'reject')} className='rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1.5 transition'>Reject</button>
                       )}
-                      <button onClick={() => navigate(`/admin/restaurants/${r.restaurantId || r.id}/edit`)} className='rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-3 py-1.5 transition'>Edit</button>
+                      <button onClick={() => navigate(`/admin/restaurants/${r.restaurantId || r.id}/edit`)} className='rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold px-3 py-1.5 transition'>Edit</button>
                     </td>
                   </tr>
                 ))}

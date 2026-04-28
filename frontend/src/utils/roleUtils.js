@@ -8,6 +8,8 @@ export function getHomeRouteForRole(role) {
       return '/admin/dashboard';
     case 'RESTAURANT':
       return '/restaurant/dashboard';
+    case 'DRIVER':
+      return '/driver/dashboard';
     default:
       return '/home';
   }

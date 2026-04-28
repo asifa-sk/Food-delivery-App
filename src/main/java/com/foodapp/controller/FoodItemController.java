@@ -29,12 +29,24 @@ public class FoodItemController {
         return ResponseEntity.ok(foodItemService.getAllByRestaurant(restaurantId));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<FoodItem> getFoodItem(@PathVariable Long id) {
+        return ResponseEntity.ok(foodItemService.getById(id));
+    }
+
     @PostMapping("/restaurant/{restaurantId}")
     public ResponseEntity<FoodItem> addFoodItem(
             @PathVariable Long restaurantId,
             @RequestBody AddFoodItemRequest request) {
         FoodItem created = foodItemService.addFoodItem(restaurantId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<FoodItem> updateFoodItem(
+            @PathVariable Long id,
+            @RequestBody AddFoodItemRequest request) {
+        return ResponseEntity.ok(foodItemService.updateFoodItem(id, request));
     }
 
     @DeleteMapping("/{id}")

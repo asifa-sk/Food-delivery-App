@@ -106,7 +106,7 @@ export default function VerifyOtpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-surface-50 via-white to-accent-100 flex items-center justify-center px-4">
 
       {/* Success toast */}
       {toast && (
@@ -118,13 +118,13 @@ export default function VerifyOtpPage() {
       <div className="w-full max-w-md">
         {/* Brand */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-orange-500 rounded-2xl shadow-lg mb-3">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-brand-500 rounded-2xl shadow-lg mb-3">
             <span className="text-2xl">📬</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-800">Verify your email</h1>
           <p className="text-gray-500 text-sm mt-1">
             We've sent a 6-digit code to{' '}
-            <span className="font-semibold text-orange-500">{email || 'your email'}</span>
+            <span className="font-semibold text-brand-500">{email || 'your email'}</span>
           </p>
         </div>
 
@@ -146,10 +146,10 @@ export default function VerifyOtpPage() {
                   onKeyDown={(e) => handleKeyDown(e, i)}
                   className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 transition focus:outline-none
                     ${d
-                      ? 'border-orange-400 bg-orange-50 text-orange-600'
+                      ? 'border-brand-400 bg-brand-50 text-brand-600'
                       : 'border-gray-200 bg-white text-gray-800'}
                     ${error ? 'border-red-300' : ''}
-                    focus:border-orange-400`}
+                    focus:border-brand-400`}
                 />
               ))}
             </div>
@@ -165,7 +165,7 @@ export default function VerifyOtpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed
+              className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed
                 text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2"
             >
               {loading ? (
@@ -181,10 +181,10 @@ export default function VerifyOtpPage() {
           <div className="text-center mt-5 text-sm">
             {resendCooldown > 0 ? (
               <p className="text-gray-400">
-                Resend OTP in <span className="font-semibold text-orange-500">{resendCooldown}s</span>
+                Resend OTP in <span className="font-semibold text-brand-500">{resendCooldown}s</span>
               </p>
             ) : (
-              <button onClick={handleResend} className="text-orange-500 hover:underline font-medium">
+              <button onClick={handleResend} className="text-brand-500 hover:underline font-medium">
                 Didn't receive it? Resend OTP
               </button>
             )}

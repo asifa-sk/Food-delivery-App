@@ -15,7 +15,7 @@ function Field({ id, label, type = 'text', placeholder, error, textarea = false,
           onChange={onChange}
           rows={2}
           className={`w-full px-4 py-3 rounded-xl border text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 resize-none transition ${
-            error ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-orange-200 focus:border-orange-400'
+            error ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-brand-200 focus:border-brand-400'
           }`}
         />
       ) : (
@@ -26,7 +26,7 @@ function Field({ id, label, type = 'text', placeholder, error, textarea = false,
           value={value}
           onChange={onChange}
           className={`w-full px-4 py-3 rounded-xl border text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 transition ${
-            error ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-orange-200 focus:border-orange-400'
+            error ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-brand-200 focus:border-brand-400'
           }`}
         />
       )}
@@ -151,16 +151,16 @@ export default function RestaurantSignupPage() {
         {/* Multi-layer gradient — dark top & bottom, window in middle */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/25 to-black/80" />
         {/* Warm amber tint from bottom-left for brand identity */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-amber-900/40 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-brand-900/40 via-transparent to-transparent" />
 
         {/* ── Top: Logo ── */}
         <div className="relative z-10 p-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center font-black text-white text-lg shadow-lg shadow-orange-500/40">
+            <div className="w-10 h-10 bg-brand-500 rounded-2xl flex items-center justify-center font-black text-white text-lg shadow-lg shadow-brand-500/40">
               F
             </div>
             <span className="text-white font-black text-2xl tracking-tight">Foodyy</span>
-            <span className="ml-1 px-2.5 py-0.5 rounded-full bg-amber-500/25 text-amber-300 text-[11px] font-bold border border-amber-400/30 uppercase tracking-wider">
+            <span className="ml-1 px-2.5 py-0.5 rounded-full bg-brand-500/25 text-accent-200 text-[11px] font-bold border border-brand-400/30 uppercase tracking-wider">
               Partner
             </span>
           </div>
@@ -168,12 +168,12 @@ export default function RestaurantSignupPage() {
 
         {/* ── Middle: Hero copy ── */}
         <div className="relative z-10 px-10">
-          <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-3">
+          <p className="text-brand-300 text-xs font-bold uppercase tracking-widest mb-3">
             ✦ &nbsp;Grow with us
           </p>
           <h2 className="text-[2.6rem] font-black text-white leading-[1.15] mb-5">
             List your restaurant,<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-200 to-brand-300">
               reach thousands.
             </span>
           </h2>
@@ -201,7 +201,7 @@ export default function RestaurantSignupPage() {
             </div>
           </div>
           <div className="flex items-start gap-3 bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl px-4 py-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+            <div className="w-1.5 h-1.5 rounded-full bg-accent-200 mt-1.5 flex-shrink-0" />
             <p className="text-white/55 text-xs leading-relaxed">
               After sign-up, verify your email. Our team reviews and approves your restaurant within 24 hours.
             </p>
@@ -214,7 +214,7 @@ export default function RestaurantSignupPage() {
         <div className="w-full max-w-lg">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center font-black text-white">F</div>
+            <div className="w-8 h-8 bg-brand-500 rounded-xl flex items-center justify-center font-black text-white">F</div>
             <span className="font-black text-xl text-gray-800">Foodyy</span>
           </div>
 
@@ -240,7 +240,7 @@ export default function RestaurantSignupPage() {
               <label className="text-sm font-semibold text-gray-700">Restaurant Photo <span className="text-gray-400 font-normal">(optional)</span></label>
               <div
                 onClick={() => fileRef.current?.click()}
-                className="relative w-full h-36 rounded-2xl border-2 border-dashed border-gray-200 hover:border-orange-400 bg-gray-50 hover:bg-orange-50 transition cursor-pointer flex flex-col items-center justify-center gap-2 overflow-hidden"
+                className="relative w-full h-36 rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand-400 bg-gray-50 hover:bg-brand-50 transition cursor-pointer flex flex-col items-center justify-center gap-2 overflow-hidden"
               >
                 {imagePreview ? (
                   <>
@@ -275,14 +275,14 @@ export default function RestaurantSignupPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <input id="showPass" type="checkbox" checked={showPass} onChange={e => setShowPass(e.target.checked)} className="w-4 h-4 accent-orange-500 cursor-pointer" />
+              <input id="showPass" type="checkbox" checked={showPass} onChange={e => setShowPass(e.target.checked)} className="w-4 h-4 accent-brand-500 cursor-pointer" />
               <label htmlFor="showPass" className="text-sm text-gray-500 cursor-pointer">Show passwords</label>
             </div>
 
             <button
               type="submit"
               disabled={loading || uploading}
-              className="mt-1 w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-orange-200 disabled:opacity-60 disabled:cursor-not-allowed text-base"
+              className="mt-1 w-full bg-gradient-to-r from-brand-500 to-brand-700 hover:from-brand-600 hover:to-brand-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-brand-200 disabled:opacity-60 disabled:cursor-not-allowed text-base"
             >
               {loading || uploading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -296,11 +296,11 @@ export default function RestaurantSignupPage() {
           <div className="mt-5 text-center space-y-2">
             <p className="text-sm text-gray-500">
               Already have an account?{' '}
-              <Link to="/login" className="text-orange-500 font-bold hover:underline">Sign in</Link>
+              <Link to="/login" className="text-brand-500 font-bold hover:underline">Sign in</Link>
             </p>
             <p className="text-sm text-gray-500">
               Customer?{' '}
-              <Link to="/customer-signup" className="text-orange-500 font-bold hover:underline">Sign up here →</Link>
+              <Link to="/customer-signup" className="text-brand-500 font-bold hover:underline">Sign up here →</Link>
             </p>
           </div>
 

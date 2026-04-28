@@ -54,7 +54,7 @@ export default function OTPModal({ email, onVerify, onClose }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8">
         <h2 className="text-xl font-bold text-gray-800 mb-1">Verify your email</h2>
         <p className="text-sm text-gray-500 mb-6">
-          Enter the 6-digit OTP sent to <span className="font-medium text-orange-500">{email}</span>
+          Enter the 6-digit OTP sent to <span className="font-medium text-brand-500">{email}</span>
         </p>
 
         <form onSubmit={handleSubmit}>
@@ -69,7 +69,7 @@ export default function OTPModal({ email, onVerify, onClose }) {
                 value={digit}
                 onChange={(e) => handleChange(e.target.value, i)}
                 onKeyDown={(e) => handleKeyDown(e, i)}
-                className="w-10 h-12 text-center text-lg font-bold border-2 rounded-lg focus:outline-none focus:border-orange-500 transition"
+                className="w-10 h-12 text-center text-lg font-bold border-2 rounded-lg focus:outline-none focus:border-brand-500 transition"
               />
             ))}
           </div>
@@ -83,7 +83,7 @@ export default function OTPModal({ email, onVerify, onClose }) {
         </form>
 
         <div className="mt-4 flex items-center justify-between text-sm">
-          <button onClick={handleResend} className="text-orange-500 hover:underline">
+          <button onClick={handleResend} className="text-brand-500 hover:underline">
             Resend OTP
           </button>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">

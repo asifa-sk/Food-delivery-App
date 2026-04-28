@@ -1,18 +1,24 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
+import { onOrderNotification } from '../../utils/notificationService';
+import { formatOrderCurrency, formatOrderDateTime, normalizeOrder } from '../../utils/orderUtils';
 
 const API = 'http://localhost:8081/api';
 
-const STATUS_OPTIONS = ['PENDING', 'CONFIRMED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
+const STATUS_OPTIONS = ['PENDING', 'CONFIRMED', 'PREPARING', 'DRIVER_ASSIGNED', 'ARRIVED_AT_RESTAURANT', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'NEARBY', 'DELIVERED', 'CANCELLED'];
 
 const statusColor = (status) => {
   switch (status) {
     case 'DELIVERED': return 'bg-green-100 text-green-700';
     case 'CANCELLED': return 'bg-red-100 text-red-700';
+    case 'NEARBY': return 'bg-orange-100 text-orange-700';
     case 'OUT_FOR_DELIVERY': return 'bg-blue-100 text-blue-700';
+    case 'PICKED_UP': return 'bg-sky-100 text-sky-700';
+    case 'ARRIVED_AT_RESTAURANT': return 'bg-cyan-100 text-cyan-700';
+    case 'DRIVER_ASSIGNED': return 'bg-brand-50 text-brand-700';
     case 'PREPARING': return 'bg-purple-100 text-purple-700';
     case 'CONFIRMED': return 'bg-indigo-100 text-indigo-700';
-    default: return 'bg-yellow-100 text-yellow-700';
+    default: return 'bg-brand-100 text-brand-700';
   }
 };
 
@@ -23,11 +29,12 @@ export default function AdminOrders() {
   const [updating, setUpdating] = useState(null);
 
   const fetchOrders = async () => {
-    setLoading(true); setError('');
+    setLoading(true);
+    setError('');
     try {
       const res = await fetch(`${API}/orders/all`);
       const data = await res.json();
-      setOrders(Array.isArray(data) ? data : []);
+      setOrders(Array.isArray(data) ? data.map(normalizeOrder) : []);
     } catch {
       setError('Failed to load orders.');
     } finally {
@@ -35,7 +42,21 @@ export default function AdminOrders() {
     }
   };
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  useEffect(() => {
+    const off = onOrderNotification(() => {
+      fetchOrders();
+    });
+    return off;
+  }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(fetchOrders, 12000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   const handleStatusChange = async (orderId, newStatus) => {
     setUpdating(orderId);
@@ -46,7 +67,8 @@ export default function AdminOrders() {
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) throw new Error('Failed');
-      setOrders(prev => prev.map(o => o.orderId === orderId ? { ...o, status: newStatus } : o));
+      const updated = normalizeOrder(await res.json());
+      setOrders((prev) => prev.map((order) => (order.id === orderId ? { ...order, ...updated } : order)));
     } catch {
       alert('Failed to update order status.');
     } finally {
@@ -72,7 +94,7 @@ export default function AdminOrders() {
 
         {loading ? (
           <div className='text-center py-16 text-gray-400'>
-            <div className='w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3'></div>
+            <div className='w-8 h-8 border-2 border-brand-400 border-t-transparent rounded-full animate-spin mx-auto mb-3'></div>
             Loading orders...
           </div>
         ) : orders.length === 0 ? (
@@ -93,29 +115,30 @@ export default function AdminOrders() {
                 </tr>
               </thead>
               <tbody className='divide-y divide-gray-50'>
-                {orders.map(o => (
-                  <tr key={o.orderId} className='hover:bg-gray-50 transition'>
-                    <td className='py-3.5 font-semibold text-gray-700'>#{o.orderId || o.id}</td>
-                    <td className='py-3.5 text-gray-600'>{o.customer?.name || o.customerName || '—'}</td>
-                    <td className='py-3.5 text-gray-600'>{o.restaurant?.name || o.restaurantName || '—'}</td>
+                {orders.map((order) => (
+                  <tr key={order.id} className='hover:bg-gray-50 transition'>
+                    <td className='py-3.5 font-semibold text-gray-700'>#{order.id}</td>
+                    <td className='py-3.5 text-gray-600'>{order.customer?.name || order.customerName || '-'}</td>
+                    <td className='py-3.5 text-gray-600'>{order.restaurant?.name || order.restaurantName || '-'}</td>
                     <td className='py-3.5 text-gray-500 max-w-[200px] text-xs'>
-                      {(o.orderItems || []).length > 0
-                        ? (o.orderItems || []).map(i => `${i.foodItem?.name || 'Item'} ×${i.quantity}`).join(', ')
-                        : <span className='text-gray-300'>—</span>}
+                      {order.items.length > 0
+                        ? order.items.map((item) => `${item.foodItem?.name || item.name || 'Item'} x${item.quantity}`).join(', ')
+                        : <span className='text-gray-300'>-</span>}
                     </td>
-                    <td className='py-3.5 font-semibold text-gray-900'>₹{Number(o.totalAmount ?? o.totalPrice ?? 0).toFixed(2)}</td>
-                    <td className='py-3.5 text-gray-400 text-xs'>{o.orderDate ? new Date(o.orderDate).toLocaleDateString() : '—'}</td>
+                    <td className='py-3.5 font-semibold text-gray-900'>{formatOrderCurrency(order.totalPrice)}</td>
+                    <td className='py-3.5 text-gray-400 text-xs'>{formatOrderDateTime(order.createdAt)}</td>
                     <td className='py-3.5'>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusColor(o.status)}`}>{o.status}</span>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusColor(order.status)}`}>{order.statusLabel || order.status}</span>
+                      {order.deliveredAt && <div className='mt-1 text-[11px] text-green-700'>Delivered: {formatOrderDateTime(order.deliveredAt)}</div>}
                     </td>
                     <td className='py-3.5'>
                       <select
-                        value={o.status}
-                        disabled={updating === (o.orderId || o.id)}
-                        onChange={e => handleStatusChange(o.orderId || o.id, e.target.value)}
-                        className='rounded-lg border border-gray-200 bg-gray-50 text-xs px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-50'
+                        value={order.status}
+                        disabled={updating === order.id}
+                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                        className='rounded-lg border border-gray-200 bg-gray-50 text-xs px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-400 disabled:opacity-50'
                       >
-                        {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                        {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
                       </select>
                     </td>
                   </tr>

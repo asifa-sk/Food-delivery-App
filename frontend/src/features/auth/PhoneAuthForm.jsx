@@ -146,7 +146,7 @@ export default function PhoneAuthForm({ onSuccess }) {
                 placeholder="9876543210"
                 maxLength={10}
                 required
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
               />
             </div>
           </div>
@@ -160,7 +160,7 @@ export default function PhoneAuthForm({ onSuccess }) {
           <button
             type="submit"
             disabled={loading || phone.length < 10}
-            className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
+            className="w-full py-2.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
           >
             {loading ? 'Sending…' : 'Send OTP'}
           </button>
@@ -184,7 +184,7 @@ export default function PhoneAuthForm({ onSuccess }) {
               maxLength={6}
               required
               autoFocus
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-center text-xl tracking-[0.5em] font-mono"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-center text-xl tracking-[0.5em] font-mono"
             />
           </div>
 
@@ -197,7 +197,7 @@ export default function PhoneAuthForm({ onSuccess }) {
           <button
             type="submit"
             disabled={loading || otp.length !== 6}
-            className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
+            className="w-full py-2.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
           >
             {loading ? 'Verifying…' : 'Verify & Sign In'}
           </button>
@@ -209,7 +209,7 @@ export default function PhoneAuthForm({ onSuccess }) {
               <button
                 type="button"
                 onClick={handleResend}
-                className="text-sm text-orange-600 hover:underline"
+                className="text-sm text-brand-600 hover:underline"
               >
                 Change number / Resend OTP
               </button>

@@ -6,16 +6,16 @@ export default function HomePage() {
   const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-50">
       <Navbar user={user} onLogout={logout} />
 
       {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-orange-500 to-orange-400 text-white py-12 px-4">
+      <div className="bg-gradient-to-r from-brand-500 to-brand-400 text-white py-12 px-4">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">
             Hungry? We've got you covered 🍔
           </h1>
-          <p className="text-orange-100 text-lg">
+          <p className="text-brand-100 text-lg">
             Order from the best restaurants near you
           </p>
         </div>

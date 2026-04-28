@@ -11,14 +11,14 @@ const OFFERS = [
     code: "BURGER40",
     title: "Flat 40% OFF",
     description: "Get flat 40% discount on your order from any burger restaurant.",
-    gradient: "from-orange-500 to-red-500",
+    gradient: "from-brand-500 to-brand-700",
     icon: <span className="text-4xl">🍔</span>,
     minOrder: "₹399",
     maxDiscount: "Upto ₹120",
     validOn: "Burger restaurants",
     expiry: "31 Dec 2026",
     tag: "POPULAR",
-    tagColor: "bg-yellow-400 text-yellow-900",
+    tagColor: "bg-accent-200 text-brand-800",
   },
   {
     id: "SWEETBOGO",
@@ -53,14 +53,14 @@ const OFFERS = [
     code: "FLASH25",
     title: "Flash Sale – 25% OFF",
     description: "Limited time flash sale! Get 25% off on all pizzas and biryanis.",
-    gradient: "from-yellow-400 to-orange-500",
+    gradient: "from-accent-200 to-brand-500",
     icon: <span className="text-4xl">⚡</span>,
     minOrder: "₹349",
     maxDiscount: "Upto ₹80",
     validOn: "Pizza & Biryani",
     expiry: "30 Apr 2026",
     tag: "LIMITED",
-    tagColor: "bg-orange-500 text-white",
+    tagColor: "bg-brand-500 text-white",
   },
   {
     id: "MUNCH50",
@@ -104,7 +104,7 @@ export default function OffersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-50">
       <NavbarWithCart user={user} onLogout={logout} />
       <CartSidebar />
 
@@ -121,7 +121,7 @@ export default function OffersPage() {
         </div>
 
         {/* Banner */}
-        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-3xl p-6 my-6 flex items-center gap-5 shadow-lg">
+        <div className="bg-gradient-to-r from-brand-500 to-brand-700 text-white rounded-3xl p-6 my-6 flex items-center gap-5 shadow-lg">
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0">
             <Gift size={32} />
           </div>
@@ -134,7 +134,7 @@ export default function OffersPage() {
         {/* How to use */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
           <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-            <Zap size={16} className="text-orange-500" /> How to use a coupon
+            <Zap size={16} className="text-brand-500" /> How to use a coupon
           </h3>
           <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
             <li>Add items to your cart and proceed to checkout</li>
@@ -183,13 +183,13 @@ export default function OffersPage() {
               {/* Footer: code + copy */}
               <div className="px-5 pb-4 flex items-center justify-between border-t border-dashed border-gray-200 pt-3">
                 <div className="flex items-center gap-2">
-                  <Tag size={14} className="text-orange-500" />
-                  <span className="font-black text-orange-600 tracking-wider text-sm">{offer.code}</span>
+                  <Tag size={14} className="text-brand-500" />
+                  <span className="font-black text-brand-600 tracking-wider text-sm">{offer.code}</span>
                   <span className="text-xs text-gray-400">| Expires {offer.expiry}</span>
                 </div>
                 <button
                   onClick={() => copyCode(offer.code)}
-                  className={"flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition " + (copiedCode === offer.code ? "bg-green-100 text-green-700" : "bg-orange-50 text-orange-600 hover:bg-orange-100")}
+                  className={"flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition " + (copiedCode === offer.code ? "bg-green-100 text-green-700" : "bg-brand-50 text-brand-600 hover:bg-accent-200")}
                 >
                   {copiedCode === offer.code ? <><CheckCheck size={13} /> Copied!</> : <><Copy size={13} /> Copy Code</>}
                 </button>
@@ -200,7 +200,7 @@ export default function OffersPage() {
 
         {/* CTA */}
         <div className="mt-8 text-center">
-          <button onClick={() => navigate("/")} className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-2xl transition shadow-md">
+          <button onClick={() => navigate("/")} className="inline-flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-2xl transition shadow-md">
             <Truck size={18} /> Order Now & Save
           </button>
         </div>

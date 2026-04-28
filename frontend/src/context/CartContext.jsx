@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import apiClient from '../api/apiClient';
 
 const CartContext = createContext();
 
@@ -19,11 +20,24 @@ export function CartProvider({ children }) {
   useEffect(() => {
     const savedCart = localStorage.getItem('cart');
     const savedCoupon = localStorage.getItem('cart_coupon');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
+    try {
+      if (savedCart) {
+        const parsedCart = JSON.parse(savedCart);
+        setCartItems(Array.isArray(parsedCart) ? parsedCart : []);
+      }
+    } catch (error) {
+      console.error('invalid stored cart payload', error);
+      localStorage.removeItem('cart');
+      setCartItems([]);
     }
-    if (savedCoupon) {
-      setAppliedCoupon(JSON.parse(savedCoupon));
+    try {
+      if (savedCoupon) {
+        setAppliedCoupon(JSON.parse(savedCoupon));
+      }
+    } catch (error) {
+      console.error('invalid stored coupon payload', error);
+      localStorage.removeItem('cart_coupon');
+      setAppliedCoupon(null);
     }
   }, []);
 
@@ -45,7 +59,7 @@ export function CartProvider({ children }) {
       if (existingItem) {
         return prev.map((cartItem) =>
           cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            ? { ...cartItem, ...item, quantity: cartItem.quantity + 1 }
             : cartItem
         );
       }
@@ -109,6 +123,58 @@ export function CartProvider({ children }) {
     setAppliedCoupon(null);
   };
 
+  const syncCartWithLatestPrices = useCallback(async () => {
+    if (!cartItems.length) {
+      return { changed: false, removedCount: 0, updatedCount: 0 };
+    }
+
+    const results = await Promise.all(
+      cartItems.map(async (item) => {
+        try {
+          const { data } = await apiClient.get(`/food/${item.id}`);
+          if (!data || data.available === false) {
+            return { type: 'remove', item };
+          }
+
+          const normalizedPrice = Number(data.price ?? item.price ?? 0);
+          const nextItem = {
+            ...item,
+            name: data.name || item.name,
+            description: data.description ?? item.description,
+            price: normalizedPrice,
+            category: data.category || item.category,
+            image: data.imageUrl || item.image,
+            restaurantId: data.restaurant?.id || item.restaurantId,
+            restaurantName: data.restaurant?.name || item.restaurantName,
+          };
+          const changed =
+            Number(item.price ?? 0) !== normalizedPrice ||
+            item.name !== nextItem.name ||
+            item.description !== nextItem.description ||
+            item.image !== nextItem.image ||
+            item.restaurantName !== nextItem.restaurantName;
+
+          return { type: 'keep', item: nextItem, changed };
+        } catch (error) {
+          return { type: 'remove', item };
+        }
+      })
+    );
+
+    const nextItems = results
+      .filter((result) => result.type === 'keep')
+      .map((result) => result.item);
+    const removedCount = results.filter((result) => result.type === 'remove').length;
+    const updatedCount = results.filter((result) => result.type === 'keep' && result.changed).length;
+    const changed = removedCount > 0 || updatedCount > 0;
+
+    if (changed) {
+      setCartItems(nextItems);
+    }
+
+    return { changed, removedCount, updatedCount };
+  }, [cartItems]);
+
   return (
     <CartContext.Provider
       value={{
@@ -126,6 +192,7 @@ export function CartProvider({ children }) {
         appliedCoupon,
         applyCoupon,
         removeCoupon,
+        syncCartWithLatestPrices,
         availableCoupons: Object.values(AVAILABLE_COUPONS),
       }}
     >
